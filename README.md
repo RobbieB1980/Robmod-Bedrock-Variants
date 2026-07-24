@@ -44,11 +44,16 @@ py -3 tools/build_installer.py
 ```text
 RBVariants\
   RB Variant Maker.exe
-  kit\
-  _internal\
+  kit\                 geometries + script template
+  tools\               full Python source (edit + rebuild — no decompile)
+  docs\                technical reference
+  _internal\           runtime for the .exe
+  SOURCE_README.txt    how to rebuild after edits
+  requirements.txt
 ```
 
-Keep that whole folder together if copying without the installer.
+Keep that whole folder together if copying without the installer.  
+`tools\` is the same source used to build the app — change walls/scripts there and run `py -3 tools\build_installer.py`.
 
 ### Interactive terminal (Python)
 
