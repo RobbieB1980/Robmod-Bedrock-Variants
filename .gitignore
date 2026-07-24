@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Local Minecraft / logs / screenshots (keep repo clean)
+Screenshots/
+*.log
+log.txt
+newlog*.txt
+ContentLog*
+
+# Optional large local-only
+*.tmp

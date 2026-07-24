@@ -1,0 +1,819 @@
+{
+  "format_version": "1.26.30",
+  "minecraft:block": {
+    "description": {
+      "identifier": "rmbv:brbrickblock_001_fence_gate",
+      "menu_category": {
+        "category": "construction",
+        "group": "minecraft:itemGroup.name.fenceGates"
+      },
+      "states": {
+        "rmbv:open": [
+          false,
+          true
+        ],
+        "rmbv:powered": [
+          false,
+          true
+        ],
+        "rmbv:in_wall": [
+          false,
+          true
+        ]
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": [
+            "minecraft:cardinal_direction"
+          ]
+        }
+      }
+    },
+    "components": {
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "rmbv_brbrickblock_001",
+          "render_method": "opaque",
+          "ambient_occlusion": 1.0,
+          "face_dimming": true
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.5
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 6.0
+      },
+      "minecraft:friction": 0.6,
+      "minecraft:flammable": {
+        "catch_chance_modifier": 0,
+        "destroy_chance_modifier": 0
+      },
+      "minecraft:light_emission": 0,
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#A65E3B",
+      "minecraft:connection_rule": {
+        "accepts_connections_from": "all"
+      },
+      "minecraft:geometry": "geometry.rmbv.gate_closed",
+      "minecraft:collision_box": [
+        {
+          "origin": [
+            -8,
+            0,
+            -2
+          ],
+          "size": [
+            16,
+            24,
+            4
+          ]
+        }
+      ],
+      "minecraft:selection_box": {
+        "origin": [
+          -8,
+          0,
+          -2
+        ],
+        "size": [
+          16,
+          16,
+          4
+        ]
+      },
+      "minecraft:redstone_consumer": {
+        "min_power": 1,
+        "propagates_power": false
+      },
+      "rmbv:fence_gate": {},
+      "minecraft:loot": "loot_tables/blocks/brbrickblock_001_fence_gate.json",
+      "minecraft:tags": [
+        "rmbv:fence_gate",
+        "minecraft:has_fence_connections"
+      ]
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'north' && q.block_state('rmbv:open') == false && q.block_state('rmbv:in_wall') == false",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_closed",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                16,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              0.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'north' && q.block_state('rmbv:open') == false && q.block_state('rmbv:in_wall') == true",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_closed_inwall",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                16,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              0.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'north' && q.block_state('rmbv:open') == true && q.block_state('rmbv:in_wall') == false",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_open",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                6,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              0.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'north' && q.block_state('rmbv:open') == true && q.block_state('rmbv:in_wall') == true",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_open_inwall",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                6,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              0.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east' && q.block_state('rmbv:open') == false && q.block_state('rmbv:in_wall') == false",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_closed",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                16,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east' && q.block_state('rmbv:open') == false && q.block_state('rmbv:in_wall') == true",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_closed_inwall",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                16,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east' && q.block_state('rmbv:open') == true && q.block_state('rmbv:in_wall') == false",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_open",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                6,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east' && q.block_state('rmbv:open') == true && q.block_state('rmbv:in_wall') == true",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_open_inwall",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                6,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              -90.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south' && q.block_state('rmbv:open') == false && q.block_state('rmbv:in_wall') == false",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_closed",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                16,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south' && q.block_state('rmbv:open') == false && q.block_state('rmbv:in_wall') == true",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_closed_inwall",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                16,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south' && q.block_state('rmbv:open') == true && q.block_state('rmbv:in_wall') == false",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_open",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                6,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south' && q.block_state('rmbv:open') == true && q.block_state('rmbv:in_wall') == true",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_open_inwall",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                6,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              180.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west' && q.block_state('rmbv:open') == false && q.block_state('rmbv:in_wall') == false",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_closed",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                16,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west' && q.block_state('rmbv:open') == false && q.block_state('rmbv:in_wall') == true",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_closed_inwall",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                16,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west' && q.block_state('rmbv:open') == true && q.block_state('rmbv:in_wall') == false",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_open",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                6,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90.0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west' && q.block_state('rmbv:open') == true && q.block_state('rmbv:in_wall') == true",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.gate_open_inwall",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                6,
+                0,
+                -2
+              ],
+              "size": [
+                2,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          },
+          "minecraft:transformation": {
+            "rotation": [
+              0,
+              90.0,
+              0
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

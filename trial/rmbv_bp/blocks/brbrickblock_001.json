@@ -1,0 +1,43 @@
+{
+  "format_version": "1.26.30",
+  "minecraft:block": {
+    "description": {
+      "identifier": "rmbv:brbrickblock_001",
+      "menu_category": {
+        "category": "construction",
+        "group": "minecraft:itemGroup.name.stoneBrick"
+      }
+    },
+    "components": {
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "rmbv_brbrickblock_001",
+          "render_method": "opaque",
+          "ambient_occlusion": 1.0,
+          "face_dimming": true
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.5
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 6.0
+      },
+      "minecraft:friction": 0.6,
+      "minecraft:flammable": {
+        "catch_chance_modifier": 0,
+        "destroy_chance_modifier": 0
+      },
+      "minecraft:light_emission": 0,
+      "minecraft:light_dampening": 15,
+      "minecraft:map_color": "#A65E3B",
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:collision_box": true,
+      "minecraft:selection_box": true,
+      "minecraft:loot": "loot_tables/blocks/brbrickblock_001.json",
+      "minecraft:tags": [
+        "rmbv:source_block"
+      ]
+    }
+  }
+}

@@ -1,0 +1,993 @@
+{
+  "format_version": "1.26.30",
+  "minecraft:block": {
+    "description": {
+      "identifier": "rmbv:brbrickblock_001_fence",
+      "menu_category": {
+        "category": "construction",
+        "group": "minecraft:itemGroup.name.fence"
+      },
+      "states": {
+        "rmbv:conn": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      }
+    },
+    "components": {
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "rmbv_brbrickblock_001",
+          "render_method": "opaque",
+          "ambient_occlusion": 1.0,
+          "face_dimming": true
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 1.5
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 6.0
+      },
+      "minecraft:friction": 0.6,
+      "minecraft:flammable": {
+        "catch_chance_modifier": 0,
+        "destroy_chance_modifier": 0
+      },
+      "minecraft:light_emission": 0,
+      "minecraft:light_dampening": 0,
+      "minecraft:map_color": "#A65E3B",
+      "minecraft:connection_rule": {
+        "accepts_connections_from": "only_fences"
+      },
+      "minecraft:support": {
+        "shape": "fence"
+      },
+      "minecraft:geometry": "geometry.rmbv.fence_0000",
+      "minecraft:collision_box": [
+        {
+          "origin": [
+            -2,
+            0,
+            -2
+          ],
+          "size": [
+            4,
+            24,
+            4
+          ]
+        }
+      ],
+      "minecraft:selection_box": {
+        "origin": [
+          -2,
+          0,
+          -2
+        ],
+        "size": [
+          4,
+          16,
+          4
+        ]
+      },
+      "rmbv:fence_update": {},
+      "minecraft:loot": "loot_tables/blocks/brbrickblock_001_fence.json",
+      "minecraft:tags": [
+        "minecraft:has_fence_connections",
+        "rmbv:fence"
+      ]
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('rmbv:conn') == 0",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_0000",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -2,
+              0,
+              -2
+            ],
+            "size": [
+              4,
+              16,
+              4
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 1",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_1000",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                -8
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -2,
+              0,
+              -8
+            ],
+            "size": [
+              4,
+              16,
+              10
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 2",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_0010",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                2
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -2,
+              0,
+              -2
+            ],
+            "size": [
+              4,
+              16,
+              10
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 3",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_1010",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                -8
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                2
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -2,
+              0,
+              -8
+            ],
+            "size": [
+              4,
+              16,
+              16
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 4",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_0001",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              10,
+              16,
+              4
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 5",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_1001",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                -8
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -8
+            ],
+            "size": [
+              10,
+              16,
+              10
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 6",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_0011",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                2
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              10,
+              16,
+              10
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 7",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_1011",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                -8
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                2
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -8
+            ],
+            "size": [
+              10,
+              16,
+              16
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 8",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_0100",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                2,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -2,
+              0,
+              -2
+            ],
+            "size": [
+              10,
+              16,
+              4
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 9",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_1100",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                -8
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                2,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -2,
+              0,
+              -8
+            ],
+            "size": [
+              10,
+              16,
+              10
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 10",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_0110",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                2
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                2,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -2,
+              0,
+              -2
+            ],
+            "size": [
+              10,
+              16,
+              10
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 11",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_1110",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                -8
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                2
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                2,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -2,
+              0,
+              -8
+            ],
+            "size": [
+              10,
+              16,
+              16
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 12",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_0101",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                2,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              4
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 13",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_1101",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                -8
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                2,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -8
+            ],
+            "size": [
+              16,
+              16,
+              10
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 14",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_0111",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                2
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                2,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -2
+            ],
+            "size": [
+              16,
+              16,
+              10
+            ]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('rmbv:conn') == 15",
+        "components": {
+          "minecraft:geometry": "geometry.rmbv.fence_1111",
+          "minecraft:collision_box": [
+            {
+              "origin": [
+                -2,
+                0,
+                -2
+              ],
+              "size": [
+                4,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                -8
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                -2,
+                0,
+                2
+              ],
+              "size": [
+                4,
+                24,
+                6
+              ]
+            },
+            {
+              "origin": [
+                2,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                0,
+                -2
+              ],
+              "size": [
+                6,
+                24,
+                4
+              ]
+            }
+          ],
+          "minecraft:selection_box": {
+            "origin": [
+              -8,
+              0,
+              -8
+            ],
+            "size": [
+              16,
+              16,
+              16
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

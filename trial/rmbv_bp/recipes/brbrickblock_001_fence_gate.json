@@ -1,0 +1,32 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "rmbv:brbrickblock_001_fence_gate"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "S#S",
+      "S#S"
+    ],
+    "key": {
+      "#": {
+        "item": "rmbv:brbrickblock_001"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "unlock": [
+      {
+        "item": "rmbv:brbrickblock_001"
+      }
+    ],
+    "result": {
+      "item": "rmbv:brbrickblock_001_fence_gate",
+      "count": 1
+    }
+  }
+}

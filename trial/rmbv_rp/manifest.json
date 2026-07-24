@@ -1,0 +1,39 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Rob Mod BR Variants Trial RP",
+    "description": "Trial resource pack: brbrickblock_001 variant geometries and textures.",
+    "uuid": "7d226c7e-3411-4e9d-92a3-bab9cb83ce4a",
+    "version": [
+      1,
+      0,
+      7
+    ],
+    "min_engine_version": [
+      1,
+      26,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "f31fd83c-fa34-402f-81fa-fed057fcdda5",
+      "version": [
+        1,
+        0,
+        7
+      ]
+    }
+  ],
+  "capabilities": [
+    "pbr"
+  ],
+  "metadata": {
+    "authors": [
+      "RobbieB",
+      "Grok Build Trial"
+    ],
+    "product_type": "addon"
+  }
+}

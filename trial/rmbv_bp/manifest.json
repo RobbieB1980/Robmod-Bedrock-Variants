@@ -1,0 +1,61 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Rob Mod BR Variants Trial BP",
+    "description": "Trial behaviour pack: brbrickblock_001 variants only. Does not modify original Rob Mod.",
+    "uuid": "fd282690-f32b-4d87-a4f7-a20232c1d574",
+    "version": [
+      1,
+      0,
+      7
+    ],
+    "min_engine_version": [
+      1,
+      26,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "c4fbaafb-d89d-4ea6-b588-9fa25cc8340d",
+      "version": [
+        1,
+        0,
+        7
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "00883d01-14e9-4fa1-aa1c-b53d1ee95c7e",
+      "version": [
+        1,
+        0,
+        7
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "7d226c7e-3411-4e9d-92a3-bab9cb83ce4a",
+      "version": [
+        1,
+        0,
+        7
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "2.0.0"
+    }
+  ],
+  "metadata": {
+    "authors": [
+      "RobbieB",
+      "Grok Build Trial"
+    ],
+    "product_type": "addon"
+  }
+}

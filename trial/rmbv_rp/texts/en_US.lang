@@ -1,0 +1,8 @@
+tile.rmbv:brbrickblock_001.name=Brushed Brick Block 001
+tile.rmbv:brbrickblock_001_stairs.name=Brushed Brick Stairs 001
+tile.rmbv:brbrickblock_001_slab.name=Brushed Brick Slab 001
+tile.rmbv:brbrickblock_001_fence.name=Brushed Brick Fence 001
+tile.rmbv:brbrickblock_001_wall.name=Brushed Brick Wall 001
+tile.rmbv:brbrickblock_001_fence_gate.name=Brushed Brick Fence Gate 001
+pack.name=Rob Mod BR Variants Trial
+pack.description=Trial: brbrickblock_001 stairs/slab/fence/wall/gate (vanilla-compatible traits)

@@ -1,0 +1,28 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "rmbv:brbrickblock_001_slab"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "###"
+    ],
+    "key": {
+      "#": {
+        "item": "rmbv:brbrickblock_001"
+      }
+    },
+    "unlock": [
+      {
+        "item": "rmbv:brbrickblock_001"
+      }
+    ],
+    "result": {
+      "item": "rmbv:brbrickblock_001_slab",
+      "count": 6
+    }
+  }
+}

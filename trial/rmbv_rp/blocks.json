@@ -1,0 +1,21 @@
+{
+  "format_version": "1.21.40",
+  "rmbv:brbrickblock_001": {
+    "sound": "stone"
+  },
+  "rmbv:brbrickblock_001_stairs": {
+    "sound": "stone"
+  },
+  "rmbv:brbrickblock_001_slab": {
+    "sound": "stone"
+  },
+  "rmbv:brbrickblock_001_fence": {
+    "sound": "stone"
+  },
+  "rmbv:brbrickblock_001_wall": {
+    "sound": "stone"
+  },
+  "rmbv:brbrickblock_001_fence_gate": {
+    "sound": "stone"
+  }
+}
