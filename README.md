@@ -22,15 +22,34 @@ Portable, **working** reference + mass-apply kit for vanilla-compatible custom b
 | **[APPLY_TO_MCADDON.md](./APPLY_TO_MCADDON.md)** | Step-by-step unpack → apply → rezip |
 | **[WORKING_VARIANT_REFERENCE.md](./WORKING_VARIANT_REFERENCE.md)** | Full technical playbook (also under `docs/`) |
 
-## Apply to any mod
+## Desktop app (Windows executable)
 
-### Interactive (recommended)
+No typing required:
+
+1. Open folder **`RobmodVariantsGenerator`** (build with `py -3 tools/build_exe.py`, or use the copy under `F:\Grok Working\RobmodVariantsGenerator`)
+2. Double-click **`RobmodVariantsGenerator.exe`**
+3. Pick your unpacked addon (or BP + RP)
+4. Enter namespace
+5. Tick **process_only.xlsx** and browse to your texture list
+6. Click **Generate variants**
+
+Keep the `kit\` folder next to the `.exe`. Zip of the whole folder: `RobmodVariantsGenerator.zip`.
+
+Rebuild the exe after kit updates:
+
+```bash
+py -3 tools/build_exe.py
+```
+
+### Interactive terminal (Python)
 
 Asks **“Did you want to include a file that lists textures only to process?”** before generating:
 
 ```bash
 py -3 tools/run_generator.py
 ```
+
+Or double-click `tools/RobmodVariantsGenerator.bat` if Python is installed.
 
 Use a `process_only.xlsx` next to your pack (column A = texture filenames, e.g. `brushedbrick_001.png`).  
 **Only those textures** get stairs/slab/fence/wall/gate — not every file under `/blocks`.

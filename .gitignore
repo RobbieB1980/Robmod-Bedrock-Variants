@@ -21,3 +21,8 @@ ContentLog*
 
 # Optional large local-only
 *.tmp
+
+# PyInstaller build output (rebuild with tools/build_exe.py)
+build/
+dist/
+*.spec
