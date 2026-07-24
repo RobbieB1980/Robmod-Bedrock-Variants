@@ -22,18 +22,33 @@ Portable, **working** reference + mass-apply kit for vanilla-compatible custom b
 | **[APPLY_TO_MCADDON.md](./APPLY_TO_MCADDON.md)** | Step-by-step unpack → apply → rezip |
 | **[WORKING_VARIANT_REFERENCE.md](./WORKING_VARIANT_REFERENCE.md)** | Full technical playbook (also under `docs/`) |
 
-## Apply to any mod (CLI)
+## Apply to any mod
+
+### Interactive (recommended)
+
+Asks **“Did you want to include a file that lists textures only to process?”** before generating:
 
 ```bash
+py -3 tools/run_generator.py
+```
+
+Use a `process_only.xlsx` next to your pack (column A = texture filenames, e.g. `brushedbrick_001.png`).  
+**Only those textures** get stairs/slab/fence/wall/gate — not every file under `/blocks`.
+
+### CLI
+
+```bash
+# Texture allow-list only (preferred)
+py -3 tools/apply_variants.py --bp path/to/BP --rp path/to/RP --ns yournamespace --process-only process_only.xlsx
+```
+
+```bash
+# All full-cube blocks (heavy — avoid unless intentional)
 py -3 tools/apply_variants.py --bp path/to/BP --rp path/to/RP --ns yournamespace --all
 ```
 
 ```bash
-py -3 tools/apply_variants.py --addon-dir path/to/unpacked_mcaddon --ns yournamespace --all
-```
-
-```bash
-py -3 tools/apply_variants.py --bp BP --rp RP --ns myns --bases kit/examples/bases.example.txt
+py -3 tools/apply_variants.py --addon-dir path/to/unpacked_mcaddon --ns yournamespace --process-only process_only.xlsx
 ```
 
 ```bash

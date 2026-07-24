@@ -633,10 +633,16 @@ Symptoms if wrong:
 Use the portable kit — proven on Rob Mod Bedrock **v1.7.1**:
 
 ```bash
-py -3 tools/apply_variants.py --bp PATH/BP --rp PATH/RP --ns yournamespace --all
+# Interactive — asks about process_only.xlsx first
+py -3 tools/run_generator.py
+
+# CLI — only textures listed in process_only.xlsx
+py -3 tools/apply_variants.py --bp PATH/BP --rp PATH/RP --ns yournamespace --process-only process_only.xlsx
 ```
 
 See **[kit/README.md](./kit/README.md)** and **[APPLY_TO_MCADDON.md](./APPLY_TO_MCADDON.md)**.
+
+**`process_only.xlsx`:** column A texture names (`brushedbrick_001.png`, …). Only those materials get variants — not every file under `/blocks`.
 
 Generates: full + stairs + slab + fence + wall + fence gate (recipes, loot, lang, geometries, script).  
 **Does not** create fence posts (removed as duplicates of fence).  

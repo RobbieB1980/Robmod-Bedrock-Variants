@@ -33,26 +33,46 @@ Plus recipes, loot tables, lang, `blocks.json`, shared geometries, one `scripts/
 
 ## Quick start (unpacked packs)
 
+### Interactive (asks about process_only first)
+
 ```bash
-# From the Robmod-Bedrock-Variants repo root:
+py -3 tools/run_generator.py
+```
+
+You will be asked:
+
+> Did you want to include a file that lists textures only to process?
+
+Answer **Y** and point at `process_only.xlsx` (see `kit/examples/process_only.example.xlsx`).
+
+### CLI — only listed textures (preferred)
+
+Put one texture file name per row in column A of `process_only.xlsx`:
+
+```text
+brushedbrick_001.png
+brushedmetal_012.png
+```
+
+```bash
 py -3 tools/apply_variants.py ^
   --bp "path/to/YourBP" ^
   --rp "path/to/YourRP" ^
   --ns yournamespace ^
-  --all ^
+  --process-only "path/to/process_only.xlsx" ^
   --pack-version 1.0.0
 ```
 
-Only some blocks:
+### CLI — all full blocks (heavy)
+
+```bash
+py -3 tools/apply_variants.py --bp BP --rp RP --ns myns --all
+```
+
+Block-stem list instead of textures:
 
 ```bash
 py -3 tools/apply_variants.py --bp BP --rp RP --ns myns --bases kit/examples/bases.example.txt
-```
-
-From texture list (Excel column of `.png` names, mapped via `terrain_texture.json`):
-
-```bash
-py -3 tools/apply_variants.py --bp BP --rp RP --ns myns --excel "files to create variants.xlsx"
 ```
 
 Unpacked `.mcaddon` folder (auto-find BP/RP):

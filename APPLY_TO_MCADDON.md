@@ -13,23 +13,35 @@ If the zip has a single outer folder, open that folder until you see the two pac
 
 ## 2. Run the kit
 
-From this repo:
+### Preferred: texture allow-list
+
+1. Create `process_only.xlsx` next to the pack (or anywhere).  
+2. Column A = texture filenames to upgrade only, e.g. `brushedbrick_001.png`.  
+3. Run interactive (asks first):
 
 ```bash
-py -3 tools/apply_variants.py --addon-dir "path/to/MyPack" --ns yournamespace --all --pack-version 1.0.0
+py -3 tools/run_generator.py
 ```
 
-Or explicit paths:
+Or CLI:
+
+```bash
+py -3 tools/apply_variants.py --addon-dir "path/to/MyPack" --ns yournamespace --process-only process_only.xlsx --pack-version 1.0.0
+```
+
+**Do not use `--all` unless you really want every full-cube block.**
+
+### Explicit BP/RP paths
 
 ```bash
 py -3 tools/apply_variants.py ^
   --bp "path/to/SomeBehaviourPack" ^
   --rp "path/to/SomeResourcePack" ^
   --ns yournamespace ^
-  --all
+  --process-only "path/to/process_only.xlsx"
 ```
 
-Subset only:
+Block-stem list instead of textures:
 
 ```bash
 py -3 tools/apply_variants.py --bp BP --rp RP --ns yournamespace --bases kit/examples/bases.example.txt

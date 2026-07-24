@@ -149,29 +149,71 @@ def list_full_bases(bp: Path) -> list[str]:
     return bases
 
 
-def bases_from_excel(excel: Path, bp: Path, rp: Path) -> list[str]:
+def texture_stems_from_excel(excel: Path) -> list[str]:
+    """
+    Read process_only.xlsx / any texture list workbook.
+
+    Accepts per-row (column A):
+      brushedbrick_001.png
+      brushedbrick_001
+      textures/blocks/brushedbrick_001.png
+    Skips _normal.png / *NORM* and blank/header-ish rows that are not textures.
+    """
     try:
         import openpyxl
     except ImportError as e:
-        raise SystemExit("openpyxl required for --excel: py -3 -m pip install openpyxl") from e
+        raise SystemExit(
+            "openpyxl required for process_only/excel lists: py -3 -m pip install openpyxl"
+        ) from e
 
     wb = openpyxl.load_workbook(excel, read_only=True, data_only=True)
-    stems = []
+    stems: list[str] = []
     for row in wb.active.iter_rows(values_only=True):
         v = row[0] if row else None
         if not v:
             continue
         s = str(v).strip()
-        if not s.lower().endswith(".png"):
+        if not s or s.lower() in ("texture", "textures", "file", "name", "png"):
             continue
-        if s.lower().endswith("_normal.png") or "NORM" in s:
+        # Directory path row (legacy lists) — skip
+        if s.endswith(":\\") or (len(s) > 2 and s[1] == ":" and "\\" in s and not s.lower().endswith((".png", ".jpg", ".jpeg", ".tga"))):
+            # e.g. F:\path\to\textures\blocks without a file name
+            if not Path(s).suffix:
+                continue
+        name = Path(s.replace("\\", "/")).name
+        low = name.lower()
+        if low.endswith("_normal.png") or "_norm." in low or low.endswith("_norm.png"):
             continue
-        stems.append(Path(s).stem if ("/" in s or "\\" in s) else s[:-4])
+        if "NORM" in name and low.endswith(".png"):
+            continue
+        if low.endswith((".png", ".jpg", ".jpeg", ".tga")):
+            stems.append(Path(name).stem)
+        elif "." not in name:
+            stems.append(name)
     wb.close()
+    # preserve order, unique
+    seen: set[str] = set()
+    out: list[str] = []
+    for st in stems:
+        if st not in seen:
+            seen.add(st)
+            out.append(st)
+    return out
+
+
+def bases_from_excel(excel: Path, bp: Path, rp: Path) -> list[str]:
+    """Map texture stems from process_only.xlsx → full-block JSON stems only."""
+    stems = texture_stems_from_excel(excel)
+    if not stems:
+        print(f"WARNING: no texture names found in {excel}")
+        return []
 
     tt_path = rp / "textures" / "terrain_texture.json"
     if not tt_path.is_file():
-        print("WARNING: no terrain_texture.json — cannot map excel textures; falling back to stem match")
+        print(
+            "WARNING: no terrain_texture.json — cannot map excel textures; "
+            "falling back to stem match on block filenames"
+        )
         return sorted({s for s in stems if (bp / "blocks" / f"{s}.json").exists()})
 
     tt = json.loads(tt_path.read_text(encoding="utf-8"))
@@ -198,6 +240,7 @@ def bases_from_excel(excel: Path, bp: Path, rp: Path) -> list[str]:
                 key_to_blocks[conf["texture"]].add(f.stem)
 
     bases: set[str] = set()
+    unmapped: list[str] = []
     for stem in stems:
         keys = fname_to_keys.get(stem, [])
         found: set[str] = set()
@@ -208,7 +251,18 @@ def bases_from_excel(excel: Path, bp: Path, rp: Path) -> list[str]:
                 for bk, bs in key_to_blocks.items():
                     if bk == base_key or bk.startswith(base_key + "_"):
                         found |= bs
-        bases |= found
+        if found:
+            bases |= found
+        else:
+            unmapped.append(stem)
+    if unmapped:
+        print(
+            f"WARNING: {len(unmapped)} texture(s) in list did not map to a full block "
+            f"(sample: {unmapped[:8]})"
+        )
+    print(
+        f"process_only list: {len(stems)} texture name(s) → {len(bases)} full block(s)"
+    )
     return sorted(bases)
 
 
@@ -1211,7 +1265,14 @@ def main(argv: list[str] | None = None) -> None:
         help="Upgrade all full-cube blocks in BP/blocks",
     )
     ap.add_argument("--bases", type=Path, help="Text file of base block stems")
-    ap.add_argument("--excel", type=Path, help="Excel list of texture pngs to map")
+    ap.add_argument(
+        "--excel",
+        "--process-only",
+        dest="excel",
+        type=Path,
+        help="Excel list of textures ONLY to process (e.g. process_only.xlsx). "
+        "Not all blocks — only textures listed in this file.",
+    )
     ap.add_argument(
         "--geo-dir",
         type=Path,
@@ -1288,14 +1349,22 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Removed fencepost-related entries (~{n} ops)")
         return
 
-    if args.all:
-        bases = list_full_bases(bp)
+    # Selection: process_only / excel wins over --all (explicit list is intentional)
+    if args.excel:
+        if not args.excel.is_file():
+            raise SystemExit(f"process_only / excel file not found: {args.excel}")
+        print(f"Processing ONLY textures listed in: {args.excel}")
+        bases = bases_from_excel(args.excel, bp, rp)
     elif args.bases:
         bases = bases_from_file(args.bases)
-    elif args.excel:
-        bases = bases_from_excel(args.excel, bp, rp)
+    elif args.all:
+        bases = list_full_bases(bp)
     else:
-        ap.error("Provide --all, --bases, or --excel (or --remove-fencepost-only)")
+        ap.error(
+            "Provide --process-only process_only.xlsx, --excel, --bases, or --all "
+            "(or --remove-fencepost-only / --uuids-only). "
+            "Prefer process_only.xlsx so not every texture in /blocks is upgraded."
+        )
 
     # Keep only existing full blocks
     bases = [b for b in bases if (bp / "blocks" / f"{b}.json").is_file()]
