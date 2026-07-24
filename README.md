@@ -36,6 +36,13 @@ py -3 tools/apply_variants.py --addon-dir path/to/unpacked_mcaddon --ns yourname
 py -3 tools/apply_variants.py --bp BP --rp RP --ns myns --bases kit/examples/bases.example.txt
 ```
 
+```bash
+# Final-step only: new unique pack UUIDs (BP + RP linked)
+py -3 tools/apply_variants.py --bp BP --rp RP --uuids-only
+```
+
+Each full apply **regenerates pack UUIDs** by default (`--keep-uuids` to skip).
+
 Kit contents:
 
 ```

@@ -72,5 +72,12 @@ MyPack_variants.mcaddon  (zip)
 - Recipes + loot + lang + `blocks.json`  
 - **Removes fence posts**  
 - Bumps pack version / min engine / server module  
+- **Final step: new unique UUIDs** for BP + RP (and BP→RP dependency) so the pack never conflicts with the original addon or Rob Mod  
 
 Textures are **not** regenerated — your existing `terrain_texture.json` and PNGs stay.
+
+### UUID-only re-stamp
+
+```bash
+py -3 tools/apply_variants.py --bp path/to/BP --rp path/to/RP --uuids-only
+```

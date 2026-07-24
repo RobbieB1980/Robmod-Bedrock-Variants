@@ -26,6 +26,7 @@ import json
 import re
 import shutil
 import sys
+import uuid
 from collections import defaultdict
 from pathlib import Path
 
@@ -1007,7 +1008,83 @@ def update_lang(rp: Path, ns: str, bases: list[str]) -> None:
     path.write_text("\n".join(out_lines) + "\n", encoding="utf-8")
 
 
-def bump_manifests(bp: Path, rp: Path, version: list[int]) -> None:
+def new_uuid() -> str:
+    return str(uuid.uuid4())
+
+
+def regenerate_pack_uuids(bp: Path, rp: Path) -> dict[str, str]:
+    """
+    Final step: assign brand-new UUIDs so the applied pack never clashes with
+    the source template, Rob Mod, or a previous apply of the same addon.
+
+    Returns the id map written (bp_header, bp_data, bp_script, rp_header, rp_resources).
+    """
+    ids = {
+        "bp_header": new_uuid(),
+        "bp_data": new_uuid(),
+        "bp_script": new_uuid(),
+        "rp_header": new_uuid(),
+        "rp_resources": new_uuid(),
+    }
+
+    bp_path = bp / "manifest.json"
+    rp_path = rp / "manifest.json"
+    if not bp_path.is_file() or not rp_path.is_file():
+        print("WARNING: cannot regenerate UUIDs — missing BP or RP manifest.json")
+        return ids
+
+    bp_data = json.loads(bp_path.read_text(encoding="utf-8"))
+    rp_data = json.loads(rp_path.read_text(encoding="utf-8"))
+
+    # Resource pack
+    rp_data["header"]["uuid"] = ids["rp_header"]
+    for mod in rp_data.get("modules", []):
+        if mod.get("type") == "resources":
+            mod["uuid"] = ids["rp_resources"]
+    # If no resources module, still stamp first module
+    if not any(m.get("type") == "resources" for m in rp_data.get("modules", [])):
+        if rp_data.get("modules"):
+            rp_data["modules"][0]["uuid"] = ids["rp_resources"]
+
+    # Behaviour pack
+    bp_data["header"]["uuid"] = ids["bp_header"]
+    for mod in bp_data.get("modules", []):
+        if mod.get("type") == "data":
+            mod["uuid"] = ids["bp_data"]
+        elif mod.get("type") == "script":
+            mod["uuid"] = ids["bp_script"]
+
+    # BP must depend on RP header UUID
+    deps = bp_data.setdefault("dependencies", [])
+    linked = False
+    for dep in deps:
+        if "uuid" in dep and "module_name" not in dep:
+            dep["uuid"] = ids["rp_header"]
+            linked = True
+            break
+    if not linked:
+        # Insert RP dependency first (version filled by bump_manifests if present)
+        ver = bp_data.get("header", {}).get("version", [1, 0, 0])
+        deps.insert(0, {"uuid": ids["rp_header"], "version": ver})
+
+    dump(bp_path, bp_data)
+    dump(rp_path, rp_data)
+    return ids
+
+
+def bump_manifests(
+    bp: Path,
+    rp: Path,
+    version: list[int],
+    *,
+    regenerate_uuids: bool = True,
+) -> dict[str, str] | None:
+    """
+    Bump versions / engine / script module, then optionally regenerate all pack UUIDs
+    (default on — final step so each apply is a unique pack pair).
+    """
+    uuid_map: dict[str, str] | None = None
+
     for path, is_bp in ((bp / "manifest.json", True), (rp / "manifest.json", False)):
         if not path.is_file():
             print(f"WARNING: missing {path}")
@@ -1023,7 +1100,7 @@ def bump_manifests(bp: Path, rp: Path, version: list[int]) -> None:
                     dep["version"] = version
                 if dep.get("module_name") == "@minecraft/server":
                     dep["version"] = SERVER_API
-            # Ensure script module exists
+            # Ensure script module exists (UUID assigned in regenerate step if enabled)
             types = {m.get("type") for m in data.get("modules", [])}
             if "script" not in types:
                 data.setdefault("modules", []).append(
@@ -1031,7 +1108,7 @@ def bump_manifests(bp: Path, rp: Path, version: list[int]) -> None:
                         "description": "Variant scripts (fence/wall/slab/gate)",
                         "type": "script",
                         "language": "javascript",
-                        "uuid": "a7c3e91f-4b2d-4e8a-9f1c-6d5e8b0a2c34",
+                        "uuid": new_uuid() if regenerate_uuids else "a7c3e91f-4b2d-4e8a-9f1c-6d5e8b0a2c34",
                         "version": version,
                         "entry": "scripts/main.js",
                     }
@@ -1045,6 +1122,33 @@ def bump_manifests(bp: Path, rp: Path, version: list[int]) -> None:
                     {"module_name": "@minecraft/server", "version": SERVER_API}
                 )
         dump(path, data)
+
+    if regenerate_uuids:
+        uuid_map = regenerate_pack_uuids(bp, rp)
+        # Re-apply version stamps on UUID-linked dependency after rewrite
+        bp_path = bp / "manifest.json"
+        if bp_path.is_file():
+            data = json.loads(bp_path.read_text(encoding="utf-8"))
+            data["header"]["version"] = version
+            data["header"]["min_engine_version"] = MIN_ENGINE
+            for mod in data.get("modules", []):
+                mod["version"] = version
+            for dep in data.get("dependencies", []):
+                if "uuid" in dep:
+                    dep["version"] = version
+                if dep.get("module_name") == "@minecraft/server":
+                    dep["version"] = SERVER_API
+            dump(bp_path, data)
+        rp_path = rp / "manifest.json"
+        if rp_path.is_file():
+            data = json.loads(rp_path.read_text(encoding="utf-8"))
+            data["header"]["version"] = version
+            data["header"]["min_engine_version"] = MIN_ENGINE
+            for mod in data.get("modules", []):
+                mod["version"] = version
+            dump(rp_path, data)
+
+    return uuid_map
 
 
 def remove_all_fenceposts(bp: Path, rp: Path, ns: str) -> int:
@@ -1096,7 +1200,11 @@ def main(argv: list[str] | None = None) -> None:
         type=Path,
         help="Unpacked .mcaddon / folder containing BP+RP subdirs",
     )
-    ap.add_argument("--ns", required=True, help="Namespace (e.g. robmodbr, mymod)")
+    ap.add_argument(
+        "--ns",
+        required=False,
+        help="Namespace (e.g. robmodbr, mymod). Required except with --uuids-only",
+    )
     ap.add_argument(
         "--all",
         action="store_true",
@@ -1137,6 +1245,16 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="Only remove fencepost assets; do not generate variants",
     )
+    ap.add_argument(
+        "--keep-uuids",
+        action="store_true",
+        help="Do not regenerate pack UUIDs (default: always assign fresh UUIDs)",
+    )
+    ap.add_argument(
+        "--uuids-only",
+        action="store_true",
+        help="Only regenerate BP/RP UUIDs (and link BP→RP); no variant generation",
+    )
     args = ap.parse_args(argv)
 
     if args.addon_dir:
@@ -1146,12 +1264,23 @@ def main(argv: list[str] | None = None) -> None:
             ap.error("Provide --bp and --rp, or --addon-dir")
         bp, rp = args.bp.resolve(), args.rp.resolve()
 
-    ns = args.ns
-    geo_prefix = args.geo_prefix or f"geometry.{ns}"
     version = parse_version(args.pack_version)
 
     print(f"BP: {bp}")
     print(f"RP: {rp}")
+
+    if args.uuids_only:
+        ids = bump_manifests(bp, rp, version, regenerate_uuids=True) or {}
+        print("Regenerated pack UUIDs (final step):")
+        for k, v in ids.items():
+            print(f"  {k}: {v}")
+        print("Done.")
+        return
+
+    if not args.ns:
+        ap.error("--ns is required unless using --uuids-only")
+    ns = args.ns
+    geo_prefix = args.geo_prefix or f"geometry.{ns}"
     print(f"NS: {ns}  geo: {geo_prefix}")
 
     if args.remove_fencepost_only:
@@ -1214,13 +1343,22 @@ def main(argv: list[str] | None = None) -> None:
     update_blocks_json(rp, ns, bases)
     update_lang(rp, ns, bases)
     remove_all_fenceposts(bp, rp, ns)
-    bump_manifests(bp, rp, version)
 
     if not args.no_script:
         if not args.script_template.is_file():
             raise SystemExit(f"Script template missing: {args.script_template}")
         write_script(bp, ns, args.script_template)
         print(f"Wrote scripts/main.js (ns={ns})")
+
+    # Final step: fresh pack UUIDs so this apply never clashes with the source mod
+    print("Final step: regenerating pack UUIDs…" if not args.keep_uuids else "Keeping existing pack UUIDs…")
+    ids = bump_manifests(
+        bp, rp, version, regenerate_uuids=not args.keep_uuids
+    )
+    if ids:
+        print("Pack UUIDs:")
+        for k, v in ids.items():
+            print(f"  {k}: {v}")
 
     print("Done.")
     print(

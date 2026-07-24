@@ -11,10 +11,12 @@ Proven on **Rob Mod Bedrock Edition v1.7.1** (hundreds of materials).
 | `geometries/` | 94 BVS-derived `.geo.json` models (stairs L/R, fence 16, wall matrix, slab, gate) |
 | `templates/main.js` | Production script with `__NS__` placeholder (slab raycast, fence/wall/gate) |
 | `examples/config.example.json` | Sample settings |
-| `../tools/apply_variants.py` | CLI mass-applier |
+| `../tools/apply_variants.py` | CLI mass-applier (ends with **unique UUID** generation) |
 | `../WORKING_VARIANT_REFERENCE.md` | Full technical playbook |
 
 **Not included on purpose:** fence posts (duplicate of fence with no arms).
+
+**Always last:** fresh pack UUIDs so each applied mod is unique (`--uuids-only` / `--keep-uuids`).
 
 ## Variants generated per full block
 
@@ -89,6 +91,27 @@ py -3 tools/apply_variants.py --addon-dir "path/to/unpacked" --ns myns --all
 - Selection boxes max Y **16**; collision may use **24**  
 - Recipes need `unlock`  
 - No fence posts — use fence  
+- **Always regenerate pack UUIDs** after apply (tool does this last by default)
+
+## Final step: unique pack UUIDs
+
+Every full apply assigns new UUIDs for:
+
+| ID | Role |
+|----|------|
+| BP header | Behaviour pack identity |
+| BP data module | Data module |
+| BP script module | Script module |
+| RP header | Resource pack identity (BP depends on this) |
+| RP resources module | Resources module |
+
+```bash
+# UUID-only (already-applied packs)
+py -3 tools/apply_variants.py --bp BP --rp RP --uuids-only --pack-version 1.2.0
+
+# Keep original UUIDs when re-applying (unusual)
+py -3 tools/apply_variants.py --bp BP --rp RP --ns myns --all --keep-uuids
+```
 
 ## Smoke test
 

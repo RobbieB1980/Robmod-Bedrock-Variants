@@ -639,7 +639,8 @@ py -3 tools/apply_variants.py --bp PATH/BP --rp PATH/RP --ns yournamespace --all
 See **[kit/README.md](./kit/README.md)** and **[APPLY_TO_MCADDON.md](./APPLY_TO_MCADDON.md)**.
 
 Generates: full + stairs + slab + fence + wall + fence gate (recipes, loot, lang, geometries, script).  
-**Does not** create fence posts (removed as duplicates of fence).
+**Does not** create fence posts (removed as duplicates of fence).  
+**Final step:** regenerates unique BP/RP UUIDs (and BP→RP dependency) so the pack never clashes with the source addon — use `--uuids-only` to re-stamp, `--keep-uuids` to skip.
 
 ### Manual checklist
 
