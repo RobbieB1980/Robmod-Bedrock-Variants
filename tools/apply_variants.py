@@ -1376,6 +1376,89 @@ def install_pack_icon(bp: Path, rp: Path, icon_path: Path) -> None:
         print(f"Pack icon → {dest}")
 
 
+def prepare_output_workspace(
+    source_bp: Path,
+    source_rp: Path,
+    output_parent: Path,
+    ns: str,
+    *,
+    clean: bool = True,
+) -> tuple[Path, Path, Path]:
+    """
+    Copy source packs into a fresh folder named after the namespace:
+
+        {output_parent}/{ns}/
+            {ns}_BP/
+            {ns}_RP/
+
+    Returns (bp_path, rp_path, ns_root).
+    """
+    ns = ns.strip()
+    if not re.fullmatch(r"[A-Za-z0-9_]+", ns):
+        raise SystemExit(
+            f"Invalid namespace for output folder {ns!r} — use letters, numbers, underscore"
+        )
+    source_bp = source_bp.resolve()
+    source_rp = source_rp.resolve()
+    output_parent = output_parent.resolve()
+    ns_root = output_parent / ns
+    bp_dest = ns_root / f"{ns}_BP"
+    rp_dest = ns_root / f"{ns}_RP"
+
+    # Never copy a pack into itself
+    for src, label in ((source_bp, "BP"), (source_rp, "RP")):
+        try:
+            src.relative_to(ns_root)
+            raise SystemExit(
+                f"Refusing to write output inside source {label} path.\n"
+                f"  source: {src}\n  output: {ns_root}"
+            )
+        except ValueError:
+            pass
+
+    if ns_root.exists() and clean:
+        print(f"Removing previous output: {ns_root}")
+        shutil.rmtree(ns_root)
+    ns_root.mkdir(parents=True, exist_ok=True)
+
+    ignore = shutil.ignore_patterns(
+        "__pycache__", "*.pyc", ".git", "*.zip", "*.mcaddon"
+    )
+    print(f"Copying behaviour pack → {bp_dest}")
+    if bp_dest.exists():
+        shutil.rmtree(bp_dest)
+    shutil.copytree(source_bp, bp_dest, ignore=ignore)
+    print(f"Copying resource pack → {rp_dest}")
+    if rp_dest.exists():
+        shutil.rmtree(rp_dest)
+    shutil.copytree(source_rp, rp_dest, ignore=ignore)
+    print(f"Output workspace: {ns_root}")
+    return bp_dest, rp_dest, ns_root
+
+
+def zip_mcaddon(ns_root: Path, ns: str) -> Path:
+    """Zip {ns}_BP + {ns}_RP into {parent}/{ns}.mcaddon (correct dual-pack layout)."""
+    import zipfile
+
+    ns_root = ns_root.resolve()
+    bp = ns_root / f"{ns}_BP"
+    rp = ns_root / f"{ns}_RP"
+    if not bp.is_dir() or not rp.is_dir():
+        raise SystemExit(f"Cannot zip mcaddon — missing {bp.name} or {rp.name}")
+    out = ns_root.parent / f"{ns}.mcaddon"
+    if out.exists():
+        out.unlink()
+    print(f"Creating {out} …")
+    with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for pack in (bp, rp):
+            for f in pack.rglob("*"):
+                if f.is_file():
+                    arc = f.relative_to(ns_root).as_posix()
+                    zf.write(f, arcname=arc)
+    print(f"mcaddon ready: {out} ({out.stat().st_size // 1024} KB)")
+    return out
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(
         description="Apply Robmod-Bedrock-Variants patterns to a Bedrock pack"
@@ -1451,6 +1534,23 @@ def main(argv: list[str] | None = None) -> None:
         help="PNG image to set as pack_icon.png on both BP and RP (leave unset to keep existing)",
     )
     ap.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Parent folder for a NEW output mcaddon workspace. Creates "
+        "{output-dir}/{ns}/{ns}_BP and {ns}_RP (source packs are copied, not modified).",
+    )
+    ap.add_argument(
+        "--make-mcaddon",
+        action="store_true",
+        help="After processing, zip the output folder into {ns}.mcaddon next to it",
+    )
+    ap.add_argument(
+        "--in-place",
+        action="store_true",
+        help="Modify source BP/RP in place (default if --output-dir is omitted)",
+    )
+    ap.add_argument(
         "--no-script", action="store_true", help="Do not overwrite scripts/main.js"
     )
     ap.add_argument(
@@ -1474,20 +1574,20 @@ def main(argv: list[str] | None = None) -> None:
     args = ap.parse_args(argv)
 
     if args.addon_dir:
-        bp, rp = find_bp_rp(args.addon_dir)
+        src_bp, src_rp = find_bp_rp(args.addon_dir)
     else:
         if not args.bp or not args.rp:
             ap.error("Provide --bp and --rp, or --addon-dir")
-        bp, rp = args.bp.resolve(), args.rp.resolve()
+        src_bp, src_rp = args.bp.resolve(), args.rp.resolve()
 
     version = parse_version(args.pack_version)
-
-    print(f"BP: {bp}")
-    print(f"RP: {rp}")
-
     mod_name = (args.mod_name or "").strip() or None
 
+    # uuids-only always works in place on the provided packs
     if args.uuids_only:
+        bp, rp = src_bp, src_rp
+        print(f"BP: {bp}")
+        print(f"RP: {rp}")
         ids = bump_manifests(
             bp, rp, version, regenerate_uuids=True, mod_name=mod_name
         ) or {}
@@ -1499,7 +1599,26 @@ def main(argv: list[str] | None = None) -> None:
 
     if not args.ns:
         ap.error("--ns is required unless using --uuids-only")
-    ns = args.ns
+    ns = args.ns.strip()
+
+    # Output workspace: new folder named after namespace (unless --in-place)
+    ns_root: Path | None = None
+    if args.output_dir and not args.in_place:
+        bp, rp, ns_root = prepare_output_workspace(
+            src_bp, src_rp, Path(args.output_dir), ns
+        )
+    elif args.in_place or not args.output_dir:
+        bp, rp = src_bp, src_rp
+        if args.output_dir and args.in_place:
+            print("NOTE: --in-place ignores --output-dir")
+    else:
+        bp, rp = src_bp, src_rp
+
+    print(f"BP: {bp}")
+    print(f"RP: {rp}")
+    if ns_root:
+        print(f"Output folder: {ns_root}")
+
     geo_prefix = args.geo_prefix or f"geometry.{ns}"
     # Capture original namespace BEFORE we rewrite block identifiers
     original_ns = (args.from_ns or "").strip() or detect_pack_namespace(bp)
@@ -1632,14 +1751,33 @@ def main(argv: list[str] | None = None) -> None:
         )
     stairs_n = len(list((bp / "blocks").glob("*_stairs.json")))
     print(f"Verify OK: {stairs_n} stairs files, sample {ns}:{sample}_stairs")
+
+    mcaddon_path: Path | None = None
+    if args.make_mcaddon:
+        if ns_root is None:
+            # Zip from parent of BP/RP if they share a parent (output layout)
+            parent = bp.parent
+            if rp.parent == parent and bp.name.endswith("_BP") and rp.name.endswith("_RP"):
+                ns_root = parent
+            else:
+                print("WARNING: --make-mcaddon requires --output-dir layout; skipping zip")
+        if ns_root is not None:
+            mcaddon_path = zip_mcaddon(ns_root, ns)
+
     print()
     print("Done.")
     print(
         "IMPORTANT: Minecraft must load THESE folders (or a copy of them):\n"
         f"  BP: {bp}\n"
         f"  RP: {rp}\n"
-        "Copy each into development_behavior_packs / development_resource_packs\n"
-        "separately, enable BOTH on the world, then:\n"
+    )
+    if ns_root:
+        print(f"New mcaddon folder: {ns_root}")
+    if mcaddon_path:
+        print(f"Double-click install: {mcaddon_path}")
+    print(
+        "Copy each pack into development_behavior_packs / development_resource_packs\n"
+        "separately (or install the .mcaddon), enable BOTH on the world, then:\n"
         f"  /give @s {ns}:{sample}\n"
         f"  /give @s {ns}:{sample}_stairs\n"
         "Bedrock 1.26+ required."

@@ -20,6 +20,7 @@ import traceback
 from pathlib import Path
 from tkinter import (
     BooleanVar,
+    Canvas,
     END,
     StringVar,
     Tk,
@@ -76,8 +77,15 @@ class VariantApp:
     def __init__(self) -> None:
         self.root = Tk()
         self.root.title("Robmod Bedrock Variants Generator")
-        self.root.minsize(720, 560)
-        self.root.geometry("820x640")
+        self.root.minsize(900, 700)
+        # Maximize so all options stay visible (Windows)
+        try:
+            self.root.state("zoomed")
+        except Exception:
+            self.root.attributes("-fullscreen", True)
+            self._fullscreen = True
+        else:
+            self._fullscreen = False
 
         self.mode = StringVar(value="addon")
         self.addon_dir = StringVar()
@@ -94,16 +102,56 @@ class VariantApp:
         self.change_icon = BooleanVar(value=False)
         self.pack_icon_path = StringVar(value="")
         self.keep_uuids = BooleanVar(value=False)
+        self.write_new_folder = BooleanVar(value=True)
+        self.make_mcaddon = BooleanVar(value=True)
+        self.output_parent = StringVar(value="")
         self.busy = False
         self.log_q: queue.Queue = queue.Queue()
 
         self._build()
         self.root.after(100, self._drain_log)
+        self.root.bind("<Escape>", self._exit_fullscreen)
+
+    def _exit_fullscreen(self, _event=None) -> None:
+        if getattr(self, "_fullscreen", False):
+            self.root.attributes("-fullscreen", False)
+            self._fullscreen = False
+            try:
+                self.root.state("zoomed")
+            except Exception:
+                pass
 
     def _build(self) -> None:
         pad = {"padx": 10, "pady": 4}
-        frm = ttk.Frame(self.root, padding=12)
-        frm.pack(fill="both", expand=True)
+
+        # Outer layout: scrollable form (top) + fixed log (bottom)
+        outer = ttk.Frame(self.root, padding=8)
+        outer.pack(fill="both", expand=True)
+
+        # Scrollable options area
+        canvas = Canvas(outer, highlightthickness=0)
+        vsb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=vsb.set)
+        vsb.pack(side="right", fill="y")
+        canvas.pack(side="top", fill="both", expand=True)
+
+        frm = ttk.Frame(canvas, padding=12)
+        form_window = canvas.create_window((0, 0), window=frm, anchor="nw")
+
+        def _on_frame_configure(_event=None) -> None:
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def _on_canvas_configure(event) -> None:
+            canvas.itemconfigure(form_window, width=event.width)
+
+        frm.bind("<Configure>", _on_frame_configure)
+        canvas.bind("<Configure>", _on_canvas_configure)
+
+        def _on_mousewheel(event) -> None:
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        self._form_canvas = canvas
 
         ttk.Label(
             frm,
@@ -228,13 +276,57 @@ class VariantApp:
         self.icon_btn = ttk.Button(row_icon2, text="Browse…", command=self._browse_pack_icon)
         self.icon_btn.pack(side="left")
 
+        # Output folder (new mcaddon workspace named after namespace)
+        out_fr = ttk.LabelFrame(
+            frm,
+            text="3. Output — new folder for the generated mcaddon",
+            padding=8,
+        )
+        out_fr.grid(row=5, column=0, columnspan=3, sticky="ew", **pad)
+        ttk.Checkbutton(
+            out_fr,
+            text="Write to a NEW folder named after the namespace (recommended — leaves source untouched)",
+            variable=self.write_new_folder,
+            command=self._toggle_output,
+        ).pack(anchor="w")
+        ttk.Label(
+            out_fr,
+            text="Creates:  {parent}/{namespace}/{namespace}_BP  +  {namespace}_RP  "
+            "and optional {namespace}.mcaddon",
+            foreground="#666",
+            wraplength=900,
+        ).pack(anchor="w", pady=2)
+        out_row = ttk.Frame(out_fr)
+        out_row.pack(fill="x", pady=4)
+        ttk.Label(out_row, text="Parent folder:").pack(side="left")
+        self.output_entry = ttk.Entry(out_row, textvariable=self.output_parent, width=55)
+        self.output_entry.pack(side="left", fill="x", expand=True, padx=6)
+        self.output_btn = ttk.Button(
+            out_row, text="Browse…", command=self._browse_output_parent
+        )
+        self.output_btn.pack(side="left")
+        ttk.Checkbutton(
+            out_fr,
+            text="Also build .mcaddon zip for double-click install",
+            variable=self.make_mcaddon,
+        ).pack(anchor="w")
+        self.output_preview = StringVar(
+            value="Output preview: (select pack + namespace)"
+        )
+        ttk.Label(
+            out_fr, textvariable=self.output_preview, foreground="#1a5276", wraplength=900
+        ).pack(anchor="w", pady=4)
+        self.ns.trace_add("write", lambda *_: self._update_output_preview())
+        self.output_parent.trace_add("write", lambda *_: self._update_output_preview())
+        self.write_new_folder.trace_add("write", lambda *_: self._update_output_preview())
+
         # process_only
         po = ttk.LabelFrame(
             frm,
-            text="3. Textures only to process (recommended)",
+            text="4. Textures only to process (recommended)",
             padding=8,
         )
-        po.grid(row=5, column=0, columnspan=3, sticky="ew", **pad)
+        po.grid(row=6, column=0, columnspan=3, sticky="ew", **pad)
         ttk.Checkbutton(
             po,
             text="Use a file that lists textures only to process (process_only.xlsx)",
@@ -258,35 +350,37 @@ class VariantApp:
             frm,
             text="Keep existing pack UUIDs (normally leave unchecked — generate fresh)",
             variable=self.keep_uuids,
-        ).grid(row=6, column=0, columnspan=3, sticky="w", **pad)
+        ).grid(row=7, column=0, columnspan=3, sticky="w", **pad)
 
         # Actions
         act = ttk.Frame(frm)
-        act.grid(row=7, column=0, columnspan=3, sticky="ew", **pad)
-        self.run_btn = ttk.Button(act, text="4. Generate variants", command=self._run)
+        act.grid(row=8, column=0, columnspan=3, sticky="ew", **pad)
+        self.run_btn = ttk.Button(act, text="5. Generate variants", command=self._run)
         self.run_btn.pack(side="left")
-        ttk.Button(act, text="UUID only", command=self._run_uuids_only).pack(
+        ttk.Button(act, text="UUID only (in-place)", command=self._run_uuids_only).pack(
             side="left", padx=8
         )
         ttk.Button(act, text="Quit", command=self.root.destroy).pack(side="right")
 
-        # Log
-        ttk.Label(frm, text="Log").grid(row=8, column=0, sticky="w", padx=10)
-        self.log = ScrolledText(frm, height=16, wrap="word", state="disabled")
-        self.log.grid(row=9, column=0, columnspan=3, sticky="nsew", padx=10, pady=4)
-        frm.rowconfigure(9, weight=1)
+        # Log sits below the scroll canvas (fixed)
+        log_fr = ttk.LabelFrame(outer, text="Log", padding=6)
+        log_fr.pack(side="bottom", fill="both", expand=False, pady=(8, 0))
+        self.log = ScrolledText(log_fr, height=12, wrap="word", state="disabled")
+        self.log.pack(fill="both", expand=True)
+
         frm.columnconfigure(0, weight=1)
 
         self._toggle_mode()
         self._toggle_process_only()
         self._toggle_mod_name()
         self._toggle_pack_icon()
+        self._toggle_output()
         self._log(
-            "Ready.\n"
-            "1. Click “Browse for folder…” and select your UNPACKED addon folder\n"
-            "   (the folder that contains both behaviour + resource packs).\n"
-            "2. Confirm namespace and process_only.xlsx if you have one.\n"
-            "3. Click Generate variants.\n"
+            "Ready. Window is maximized (Esc exits true-fullscreen if used).\n"
+            "1. Browse for your UNPACKED addon folder (contains BP + RP).\n"
+            "2. Set namespace / mod name / icon as needed.\n"
+            "3. Output goes to a NEW folder named after the namespace (source left intact).\n"
+            "4. Optional process_only.xlsx, then Generate.\n"
             f"Kit geos: {DEFAULT_GEO}\n"
         )
         if av is None:
@@ -327,6 +421,50 @@ class VariantApp:
         self.icon_entry.configure(state=state)
         self.icon_btn.configure(state=state)
 
+    def _toggle_output(self) -> None:
+        state = "normal" if self.write_new_folder.get() else "disabled"
+        self.output_entry.configure(state=state)
+        self.output_btn.configure(state=state)
+        self._update_output_preview()
+
+    def _browse_output_parent(self) -> None:
+        initial = self.output_parent.get().strip()
+        if not initial:
+            initial = self.addon_dir.get().strip() or str(Path.home())
+        p = filedialog.askdirectory(
+            title="Select parent folder for the NEW namespace output",
+            initialdir=initial if Path(initial).is_dir() else str(Path.home()),
+        )
+        if p:
+            self.output_parent.set(p)
+            self._update_output_preview()
+
+    def _default_output_parent(self) -> Path:
+        if self.mode.get() == "addon" and self.addon_dir.get().strip():
+            return Path(self.addon_dir.get().strip()).resolve().parent
+        if self.bp_path.get().strip():
+            return Path(self.bp_path.get().strip()).resolve().parent
+        return Path.home()
+
+    def _update_output_preview(self) -> None:
+        ns = self.ns.get().strip() or "{namespace}"
+        if not self.write_new_folder.get():
+            self.output_preview.set(
+                "Output: IN PLACE (source packs will be modified directly)"
+            )
+            return
+        parent = self.output_parent.get().strip()
+        if not parent:
+            parent = str(self._default_output_parent())
+            # don't write back into StringVar here to avoid recursion loops on every keypress
+        root = Path(parent) / ns
+        self.output_preview.set(
+            f"Output preview:\n"
+            f"  {root}\\{ns}_BP\\\n"
+            f"  {root}\\{ns}_RP\\\n"
+            f"  {Path(parent) / (ns + '.mcaddon')}  (if zip enabled)"
+        )
+
     def _browse_pack_icon(self) -> None:
         p = filedialog.askopenfilename(
             title="Select pack icon image (.png)",
@@ -351,9 +489,13 @@ class VariantApp:
         if p:
             self.addon_dir.set(p)
             self._log(f"Selected addon folder:\n  {p}\n")
+            # Default output parent = same parent as the source addon
+            if not self.output_parent.get().strip():
+                self.output_parent.set(str(Path(p).resolve().parent))
             self._guess_process_only(Path(p))
             self._guess_namespace(Path(p))
             self._refresh_detected()
+            self._update_output_preview()
 
     def _browse_bp(self) -> None:
         p = filedialog.askdirectory(title="Select behaviour pack folder")
@@ -483,11 +625,23 @@ class VariantApp:
                 if not bp.is_dir() or not rp.is_dir():
                     self.detect_var.set("BP or RP path is not a valid folder.")
                     return
-            self.detect_var.set(
-                f"Will read/write:\n  BP → {bp}\n  RP → {rp}\n"
-                f"(Generator updates these folders in place.)"
-            )
+            if self.write_new_folder.get():
+                parent = self.output_parent.get().strip() or str(
+                    self._default_output_parent()
+                )
+                ns = self.ns.get().strip() or "{namespace}"
+                self.detect_var.set(
+                    f"Source (read-only):\n  BP → {bp}\n  RP → {rp}\n"
+                    f"Output (new folder):\n  {Path(parent) / ns}\\"
+                )
+            else:
+                self.detect_var.set(
+                    f"Will modify IN PLACE:\n  BP → {bp}\n  RP → {rp}"
+                )
             self._log(f"Detected packs:\n  BP: {bp}\n  RP: {rp}\n")
+            if not self.output_parent.get().strip():
+                self.output_parent.set(str(self._default_output_parent()))
+            self._update_output_preview()
         except SystemExit as e:
             self.detect_var.set(str(e.code) if e.code else str(e))
         except Exception as e:
@@ -590,10 +744,24 @@ class VariantApp:
         else:
             rewrite_note = ""
 
+        out_parent = self.output_parent.get().strip()
+        if self.write_new_folder.get():
+            if not out_parent:
+                out_parent = str(self._default_output_parent())
+            out_note = (
+                f"NEW folder: {Path(out_parent) / ns}\n"
+                f"  {ns}_BP + {ns}_RP"
+                + (" + .mcaddon" if self.make_mcaddon.get() else "")
+                + "\nSource packs will NOT be modified.\n"
+            )
+        else:
+            out_note = "IN PLACE — source BP/RP will be modified.\n"
+
         if not messagebox.askyesno(
             "Confirm",
             f"Generate variants for namespace '{ns}'?\n\n"
-            f"BP: {bp}\nRP: {rp}\n"
+            f"Source BP: {bp}\nSource RP: {rp}\n"
+            + out_note
             + (f"Mod name: {mod_name}\n" if mod_name else "")
             + rewrite_note
             + (f"Pack icon: {icon}\n" if icon else "Pack icon: keep existing\n")
@@ -619,6 +787,12 @@ class VariantApp:
             "--script-template",
             str(DEFAULT_SCRIPT),
         ]
+        if self.write_new_folder.get():
+            argv += ["--output-dir", out_parent]
+            if self.make_mcaddon.get():
+                argv.append("--make-mcaddon")
+        else:
+            argv.append("--in-place")
         if mod_name:
             argv += ["--mod-name", mod_name]
         if self.change_ns.get():
