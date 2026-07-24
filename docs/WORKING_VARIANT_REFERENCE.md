@@ -628,26 +628,36 @@ Symptoms if wrong:
 
 ## 12. Applying to a full mod (procedure)
 
+### Automated (recommended)
+
+Use the portable kit — proven on Rob Mod Bedrock **v1.7.1**:
+
+```bash
+py -3 tools/apply_variants.py --bp PATH/BP --rp PATH/RP --ns yournamespace --all
+```
+
+See **[kit/README.md](./kit/README.md)** and **[APPLY_TO_MCADDON.md](./APPLY_TO_MCADDON.md)**.
+
+Generates: full + stairs + slab + fence + wall + fence gate (recipes, loot, lang, geometries, script).  
+**Does not** create fence posts (removed as duplicates of fence).
+
+### Manual checklist
+
 1. Set all custom blocks to `format_version` **1.26.30** (or current).  
 2. Fix **every** block: AO float, `minecraft:tags`, direct custom components, valid `menu_category.group`.  
 3. For each full block `{base}`, generate five variants with shared texture/stats.  
 4. Import/generate geos once; reuse mapping tables from sections 4–8.  
-5. One shared script (or one module) that loops all fence/wall/slab/gate ids (arrays of typeIds), not one-off constants.  
+5. One shared script using suffix checks (`endsWith("_fence")` etc.), not one-off constants.  
 6. Add recipes with `unlock` for each variant.  
 7. Bump pack version; enable BP+RP; content log clean of `block_definitions` errors.  
 8. Smoke test **per axis** with screenshots (N/S/E/W view labels) for fence + wall lines before mass-generating hundreds of blocks.
 
-### Suggested script generalisation
+### Script notes (production)
 
-```js
-const FENCE_IDS = [ /* all {ns}:*_fence */ ];
-const WALL_IDS = [ /* all {ns}:*_wall */ ];
-const SLAB_IDS = [ /* all {ns}:*_slab */ ];
-const GATE_IDS = [ /* all {ns}:*_fence_gate */ ];
-// Full id for slab double placement helper: strip "_slab" suffix or map table
-```
-
-Connection logic is identical; only `typeId` sets change.
+- Slab side top/bottom: use `getBlockFromViewDirection` + ray-march hit Y (do not default only to bottom).  
+- Slab same-cell merge: placing opposite half into a single slab cell → double.  
+- Selection box clamp Y ≤ 16 (legacy fence posts often failed this).  
+- No fence posts.
 
 ---
 

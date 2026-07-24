@@ -1,0 +1,12 @@
+{
+  "namespace": "mymod",
+  "bp": "path/to/MyMod_BP",
+  "rp": "path/to/MyMod_RP",
+  "pack_version": "1.0.0",
+  "selection": "all",
+  "notes": [
+    "Run: py -3 tools/apply_variants.py --bp ... --rp ... --ns mymod --all",
+    "Or use --bases bases.txt / --excel textures.xlsx",
+    "Do not create fence posts"
+  ]
+}

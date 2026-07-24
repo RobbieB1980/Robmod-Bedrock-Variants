@@ -6,22 +6,22 @@
   ItemStack,
 } from "@minecraft/server";
 
-const NS = "rmbv";
-const NS_COLON = "rmbv:";
-const CONN_STATE = "rmbv:conn";
-const SLAB_TYPE = "rmbv:slab_type";
-const WALL_N = "rmbv:wall_n";
-const WALL_E = "rmbv:wall_e";
-const WALL_S = "rmbv:wall_s";
-const WALL_W = "rmbv:wall_w";
-const WALL_POST = "rmbv:wall_post";
-const GATE_OPEN = "rmbv:open";
-const GATE_POWERED = "rmbv:powered";
-const GATE_IN_WALL = "rmbv:in_wall";
+const NS = "__NS__";
+const NS_COLON = "__NS__:";
+const CONN_STATE = "__NS__:conn";
+const SLAB_TYPE = "__NS__:slab_type";
+const WALL_N = "__NS__:wall_n";
+const WALL_E = "__NS__:wall_e";
+const WALL_S = "__NS__:wall_s";
+const WALL_W = "__NS__:wall_w";
+const WALL_POST = "__NS__:wall_post";
+const GATE_OPEN = "__NS__:open";
+const GATE_POWERED = "__NS__:powered";
+const GATE_IN_WALL = "__NS__:in_wall";
 const DIR_STATE = "minecraft:cardinal_direction";
 const HALF_STATE = "minecraft:vertical_half";
 // Legacy stairs (blocks not yet upgraded)
-const SHAPE_STATE = "rmbv:shape";
+const SHAPE_STATE = "__NS__:shape";
 
 const BIT = { north: 0, south: 1, east: 2, west: 3 };
 const CONN_DIRS = ["north", "south", "east", "west"];
@@ -127,7 +127,7 @@ function setFenceMask(block, mask) {
       BlockPermutation.resolve(block.typeId, { [CONN_STATE]: mask })
     );
   } catch (err) {
-    console.warn(`[rmbv] setFenceMask failed: ${err}`);
+    console.warn(`[__NS__] setFenceMask failed: ${err}`);
   }
 }
 
@@ -234,11 +234,11 @@ function recomputeWallModern(block) {
       })
     );
   } catch (err) {
-    console.warn(`[rmbv] wall update failed: ${err}`);
+    console.warn(`[__NS__] wall update failed: ${err}`);
   }
 }
 
-/** Legacy walls still using rmbv:conn 0–15 */
+/** Legacy walls still using __NS__:conn 0–15 */
 function recomputeWallLegacy(block) {
   if (!block || !block.isValid || !isWall(block.typeId)) return;
   if (!hasState(block, CONN_STATE) || hasState(block, WALL_N)) return;
@@ -260,7 +260,7 @@ function recomputeWallLegacy(block) {
       BlockPermutation.resolve(block.typeId, { [CONN_STATE]: mask })
     );
   } catch (err) {
-    console.warn(`[rmbv] legacy wall failed: ${err}`);
+    console.warn(`[__NS__] legacy wall failed: ${err}`);
   }
 }
 
@@ -316,11 +316,11 @@ function updateGateInWall(block) {
       })
     );
   } catch (err) {
-    console.warn(`[rmbv] gate in_wall failed: ${err}`);
+    console.warn(`[__NS__] gate in_wall failed: ${err}`);
   }
 }
 
-// --- Legacy stair shape (only for non-upgraded stairs with rmbv:shape) ---
+// --- Legacy stair shape (only for non-upgraded stairs with __NS__:shape) ---
 function isMatchingStair(block, typeId, half) {
   if (!block || block.typeId !== typeId) return false;
   return safeState(block, HALF_STATE) === half;
@@ -473,7 +473,7 @@ system.beforeEvents.startup.subscribe((init) => {
           );
           updateFenceNeighborhood(block);
         } catch (err) {
-          console.warn(`[rmbv] gate toggle failed: ${err}`);
+          console.warn(`[__NS__] gate toggle failed: ${err}`);
         }
       });
     },
@@ -508,7 +508,7 @@ system.beforeEvents.startup.subscribe((init) => {
           }
           updateFenceNeighborhood(block);
         } catch (err) {
-          console.warn(`[rmbv] gate redstone failed: ${err}`);
+          console.warn(`[__NS__] gate redstone failed: ${err}`);
         }
       });
     },
@@ -569,7 +569,7 @@ function consumeSlab(player, slabId) {
       }
     }
   } catch (err) {
-    console.warn(`[rmbv] slab consume failed: ${err}`);
+    console.warn(`[__NS__] slab consume failed: ${err}`);
   }
 }
 
@@ -596,7 +596,7 @@ function completeToDouble(block, player, slabId) {
     block.dimension.playSound("use.stone", block.location);
     return true;
   } catch (err) {
-    console.warn(`[rmbv] completeToDouble failed: ${err}`);
+    console.warn(`[__NS__] completeToDouble failed: ${err}`);
     return false;
   }
 }
@@ -619,7 +619,7 @@ function tryMergeAfterPlace(placed) {
         setDoubleSlab(below);
         placed.setType("minecraft:air");
       } catch (err) {
-        console.warn(`[rmbv] merge below failed: ${err}`);
+        console.warn(`[__NS__] merge below failed: ${err}`);
       }
       return;
     }
@@ -635,7 +635,7 @@ function tryMergeAfterPlace(placed) {
         setDoubleSlab(above);
         placed.setType("minecraft:air");
       } catch (err) {
-        console.warn(`[rmbv] merge above failed: ${err}`);
+        console.warn(`[__NS__] merge above failed: ${err}`);
       }
     }
   }
@@ -738,7 +738,7 @@ function placeSlabAt(dim, pos, half, player, slabId) {
     } catch (_) {}
     return true;
   } catch (err) {
-    console.warn(`[rmbv] placeSlabAt failed: ${err}`);
+    console.warn(`[__NS__] placeSlabAt failed: ${err}`);
     return false;
   }
 }
@@ -1063,7 +1063,7 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
       z: loc.z + 0.5,
     });
   } catch (err) {
-    console.warn(`[rmbv] double slab drop failed: ${err}`);
+    console.warn(`[__NS__] double slab drop failed: ${err}`);
   }
 });
 
@@ -1086,7 +1086,7 @@ world.afterEvents.playerPlaceBlock.subscribe((event) => {
         }
         tryMergeAfterPlace(block);
       } catch (err) {
-        console.warn(`[rmbv] slab place sync failed: ${err}`);
+        console.warn(`[__NS__] slab place sync failed: ${err}`);
       }
     }
 
@@ -1135,4 +1135,4 @@ world.afterEvents.playerBreakBlock.subscribe((event) => {
   });
 });
 
-console.log("[rmbv] vanilla-compatible variants script loaded (v1.7.0)");
+console.log("[__NS__] vanilla-compatible variants script loaded (v1.7.0)");

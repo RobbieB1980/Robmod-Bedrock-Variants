@@ -1,0 +1,4 @@
+# One full-block stem per line (filename without .json)
+# Example:
+# brbrickblock_001
+# stoneblock_012

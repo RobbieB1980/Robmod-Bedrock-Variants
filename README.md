@@ -1,84 +1,84 @@
 # Robmod Bedrock Variants
 
-Portable, **working** reference for vanilla-compatible custom block variants on **Minecraft Bedrock 1.26+**:
+Portable, **working** reference + mass-apply kit for vanilla-compatible custom block variants on **Minecraft Bedrock 1.26+**.
 
-| Variant | Status (trial) |
-|---------|----------------|
+**Status (production-proven on Rob Mod Bedrock v1.7.1):**
+
+| Variant | Status |
+|---------|--------|
 | Full block | Working |
 | Stairs (corners L/R) | Working |
-| Slab (single / double / place on double) | Working |
-| Fence (all axes join) | Working |
-| Wall (all axes join) | Working |
+| Slab (single / double / sides top&bottom / on full) | Working |
+| Fence (all axes, E↔W mesh swap) | Working |
+| Wall (short/tall, E↔W mesh swap) | Working |
 | Fence gate (open / redstone / in-wall) | Working |
-
-Use this repo as the basis to apply the same patterns to **Rob Mod** or any other Bedrock pack.
+| Fence post | **Removed** — duplicate of fence |
 
 ## Start here
 
-**[WORKING_VARIANT_REFERENCE.md](./WORKING_VARIANT_REFERENCE.md)** — complete portable playbook:
+| Doc | Use |
+|-----|-----|
+| **[kit/README.md](./kit/README.md)** | Portable kit + CLI to apply to **any** pack / `.mcaddon` |
+| **[APPLY_TO_MCADDON.md](./APPLY_TO_MCADDON.md)** | Step-by-step unpack → apply → rezip |
+| **[WORKING_VARIANT_REFERENCE.md](./WORKING_VARIANT_REFERENCE.md)** | Full technical playbook (also under `docs/`) |
 
-- Schema rules so blocks appear in `/give` and creative  
-- Material instances, tags, custom components (1.26.30)  
-- Stairs L↔R mesh swap  
-- Fence & wall **E↔W mesh swap** (Bedrock X-mirror)  
-- Script-driven fence `conn` bits and wall short/tall/post  
-- Slab stacking + place-against-double  
-- Recipes with unlock, collision vs selection limits  
-- How to mass-apply to a full mod  
+## Apply to any mod (CLI)
 
-Same file also lives at [`docs/WORKING_VARIANT_REFERENCE.md`](./docs/WORKING_VARIANT_REFERENCE.md).
+```bash
+py -3 tools/apply_variants.py --bp path/to/BP --rp path/to/RP --ns yournamespace --all
+```
 
-## Trial pack (verified)
+```bash
+py -3 tools/apply_variants.py --addon-dir path/to/unpacked_mcaddon --ns yournamespace --all
+```
 
-Concrete working example for one material (`rmbv:brbrickblock_001`):
+```bash
+py -3 tools/apply_variants.py --bp BP --rp RP --ns myns --bases kit/examples/bases.example.txt
+```
+
+Kit contents:
 
 ```
-trial/
-  rmbv_bp/     # behaviour: blocks, recipes, loot, scripts
-  rmbv_rp/     # resource: models, textures, lang
-  README.md
+kit/
+  geometries/          # 94 shared .geo.json models
+  templates/main.js    # production script (__NS__ placeholder)
+  examples/
 tools/
+  apply_variants.py    # mass applier
   build_trial.py
   import_bvs_geos.py
-releases/
-  brbrick_001_variants_trial.mcaddon
 ```
 
-### Install trial
+## Trial pack (single material demo)
 
-1. Double-click `releases/brbrick_001_variants_trial.mcaddon`, **or**  
-2. Copy `trial/rmbv_bp` → `development_behavior_packs` and `trial/rmbv_rp` → `development_resource_packs`  
-3. Enable **both** packs on a world (Bedrock 1.26+)  
-4. `/give @s rmbv:brbrickblock_001` (and `_stairs`, `_slab`, `_fence`, `_wall`, `_fence_gate`)
-
-### Rebuild trial
-
-From the repo root (optional BVS export `all_model.geo.json` next to project for geos):
+```
+trial/rmbv_bp + trial/rmbv_rp
+releases/brbrick_001_variants_trial.mcaddon
+```
 
 ```bash
 py -3 tools/build_trial.py
 ```
 
+Install: enable **both** BP and RP (never one folder with two manifests).
+
 ## Engine
 
 - Block `format_version`: **1.26.30**  
 - `@minecraft/server`: **2.0.0**  
-- min_engine_version: **1.26.0**
+- `min_engine_version`: **[1, 26, 0]**  
 
-## Apply to a full mod
+## Hard rules
 
-1. Read `WORKING_VARIANT_REFERENCE.md`  
-2. Point an assistant (or follow the procedure section) at your full BP/RP  
-3. Replace `{ns}` / `{base}` / `{tex}` placeholders for every full block  
-4. Share one script that loops all fence/wall/slab/gate ids  
-
-Do **not** copy trial UUIDs into a published pack without regenerating them.
-
-## License / credit
-
-Trial tooling and reference produced for Rob Mod Bedrock variant work.  
-Authors noted in pack manifests: RobbieB / Grok Build Trial.
+1. `ambient_occlusion` = float `1.0` (not bool)  
+2. Tags = `minecraft:tags` array  
+3. Stairs: L↔R mesh swap; fence/wall: **E↔W** mesh swap only  
+4. Selection Y ≤ 16; collision may be 24  
+5. Recipes need `unlock`  
+6. No fence posts  
 
 ## Repo
 
-https://github.com/Profe550rCha0s/Robmod-Bedrock-Variants
+https://github.com/RobbieB1980/Robmod-Bedrock-Variants  
+
+Authors: RobbieB / Grok Build.
