@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Build RobmodVariantsGenerator.exe with PyInstaller.
+Build RB Variant Maker (onedir app) with PyInstaller.
 
 Usage (from repo root):
   py -3 -m pip install pyinstaller openpyxl
   py -3 tools/build_exe.py
 
 Output:
-  dist/RobmodVariantsGenerator/
-    RobmodVariantsGenerator.exe
-    kit/geometries/...
-    kit/templates/main.js
+  dist/RBVariants/
+    RB Variant Maker.exe
+    kit/
+    _internal/
 """
 from __future__ import annotations
 
@@ -23,7 +23,8 @@ REPO = Path(__file__).resolve().parents[1]
 TOOLS = REPO / "tools"
 DIST = REPO / "dist"
 BUILD = REPO / "build"
-NAME = "RobmodVariantsGenerator"
+APP_NAME = "RB Variant Maker"
+OUT_FOLDER = "RBVariants"  # folder name users keep
 
 
 def main() -> int:
@@ -36,24 +37,25 @@ def main() -> int:
         )
 
     # Clean previous
-    for p in (BUILD / NAME, DIST / NAME):
+    for p in (BUILD / APP_NAME, DIST / OUT_FOLDER, DIST / APP_NAME):
         if p.exists():
             shutil.rmtree(p, ignore_errors=True)
 
-    # onedir: kit folder sits next to exe (easy to update geos without rebuild)
+    # PyInstaller forbids some chars in --name for work paths; use safe build name
+    build_name = "RBVariantMaker"
+
     cmd = [
         sys.executable,
         "-m",
         "PyInstaller",
         "--noconfirm",
         "--clean",
-        "--windowed",  # no console flash
+        "--windowed",
         "--name",
-        NAME,
+        build_name,
         "--onedir",
         "--paths",
         str(TOOLS),
-        # Bundle apply_variants + openpyxl data
         "--hidden-import",
         "apply_variants",
         "--hidden-import",
@@ -63,8 +65,38 @@ def main() -> int:
     print("Running:", " ".join(cmd))
     subprocess.check_call(cmd, cwd=str(REPO))
 
-    out_dir = DIST / NAME
-    # Copy kit beside exe
+    built = DIST / build_name
+    if not built.is_dir():
+        raise SystemExit(f"Build folder missing: {built}")
+
+    # Assemble final folder: dist/RBVariants/
+    out_dir = DIST / OUT_FOLDER
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+    out_dir.mkdir(parents=True)
+
+    # Rename exe to "RB Variant Maker.exe"
+    src_exe = built / f"{build_name}.exe"
+    if not src_exe.is_file():
+        raise SystemExit(f"Built exe missing: {src_exe}")
+
+    # Copy entire onedir contents
+    for item in built.iterdir():
+        dest = out_dir / item.name
+        if item.is_dir():
+            shutil.copytree(item, dest)
+        else:
+            shutil.copy2(item, dest)
+
+    # Rename exe
+    final_exe = out_dir / f"{APP_NAME}.exe"
+    staged = out_dir / f"{build_name}.exe"
+    if staged.is_file():
+        if final_exe.exists():
+            final_exe.unlink()
+        staged.rename(final_exe)
+
+    # kit beside exe
     kit_src = REPO / "kit"
     kit_dst = out_dir / "kit"
     if kit_dst.exists():
@@ -75,28 +107,26 @@ def main() -> int:
         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
     )
 
-    # Short launcher note
     readme = out_dir / "README.txt"
     readme.write_text(
-        "Robmod Bedrock Variants Generator\n"
-        "=================================\n\n"
-        "1. Double-click RobmodVariantsGenerator.exe\n"
-        "2. Select your unpacked addon (or BP + RP folders)\n"
-        "3. Enter namespace (e.g. robbrblocks)\n"
-        "4. Prefer process_only.xlsx listing textures only to process\n"
-        "5. Click Generate variants\n\n"
-        "Keep the kit/ folder next to the .exe.\n"
-        "Requires no Python install on the target PC.\n",
+        "RB Variant Maker\n"
+        "================\n\n"
+        "1. Double-click \"RB Variant Maker.exe\"\n"
+        "2. Browse to your unpacked addon folder\n"
+        "3. Set namespace / mod name / icon as needed\n"
+        "4. Prefer process_only.xlsx for texture allow-list\n"
+        "5. Generate → creates a NEW folder named after the namespace\n\n"
+        "Keep this entire RBVariants folder together (kit + _internal required).\n"
+        "No Python install needed.\n",
         encoding="utf-8",
     )
 
     print()
-    print("Build complete:")
-    print(" ", out_dir / f"{NAME}.exe")
+    print("App build complete:")
+    print(" ", final_exe)
     print(" ", kit_dst)
     print()
-    print("Zip the entire folder for distribution:")
-    print(f"  {out_dir}")
+    print(f"Folder ready for packaging: {out_dir}")
     return 0
 
 

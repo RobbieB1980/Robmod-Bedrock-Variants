@@ -76,7 +76,7 @@ class GuiLog(io.TextIOBase):
 class VariantApp:
     def __init__(self) -> None:
         self.root = Tk()
-        self.root.title("Robmod Bedrock Variants Generator")
+        self.root.title("RB Variant Maker")
         self.root.minsize(900, 700)
         # Maximize so all options stay visible (Windows)
         try:
