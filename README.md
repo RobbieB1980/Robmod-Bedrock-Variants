@@ -22,24 +22,33 @@ Portable, **working** reference + mass-apply kit for vanilla-compatible custom b
 | **[APPLY_TO_MCADDON.md](./APPLY_TO_MCADDON.md)** | Step-by-step unpack → apply → rezip |
 | **[WORKING_VARIANT_REFERENCE.md](./WORKING_VARIANT_REFERENCE.md)** | Full technical playbook (also under `docs/`) |
 
-## Desktop app (Windows executable)
+## Desktop app (Windows)
 
-No typing required:
+### One-file install (recommended)
 
-1. Open folder **`RobmodVariantsGenerator`** (build with `py -3 tools/build_exe.py`, or use the copy under `F:\Grok Working\RobmodVariantsGenerator`)
-2. Double-click **`RobmodVariantsGenerator.exe`**
-3. Pick your unpacked addon (or BP + RP)
-4. Enter namespace and optional **mod display name** (rename in Minecraft pack list)
-5. Tick **process_only.xlsx** and browse to your texture list
-6. Click **Generate variants**
+1. Double-click **`Install RB Variants.exe`** (~40 MB single file)
+2. It extracts into **`RBVariants\`** next to the installer
+3. Runs **`RB Variant Maker.exe`**
+4. Browse unpacked addon → options → Generate (writes a **new** folder named after the namespace)
 
-Keep the `kit\` folder next to the `.exe`. Zip of the whole folder: `RobmodVariantsGenerator.zip`.
+No Python install required. Share only the installer.
 
-Rebuild the exe after kit updates:
+Rebuild:
 
 ```bash
-py -3 tools/build_exe.py
+py -3 tools/build_installer.py
 ```
+
+### Extracted app folder
+
+```text
+RBVariants\
+  RB Variant Maker.exe
+  kit\
+  _internal\
+```
+
+Keep that whole folder together if copying without the installer.
 
 ### Interactive terminal (Python)
 
