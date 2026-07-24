@@ -29,7 +29,7 @@ No typing required:
 1. Open folder **`RobmodVariantsGenerator`** (build with `py -3 tools/build_exe.py`, or use the copy under `F:\Grok Working\RobmodVariantsGenerator`)
 2. Double-click **`RobmodVariantsGenerator.exe`**
 3. Pick your unpacked addon (or BP + RP)
-4. Enter namespace
+4. Enter namespace and optional **mod display name** (rename in Minecraft pack list)
 5. Tick **process_only.xlsx** and browse to your texture list
 6. Click **Generate variants**
 
