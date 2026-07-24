@@ -84,11 +84,15 @@ class VariantApp:
         self.bp_path = StringVar()
         self.rp_path = StringVar()
         self.ns = StringVar(value="mymod")
+        self.original_ns = StringVar(value="")
+        self.change_ns = BooleanVar(value=False)
         self.pack_version = StringVar(value="1.0.0")
         self.rename_mod = BooleanVar(value=True)
         self.mod_name = StringVar(value="")
         self.use_process_only = BooleanVar(value=True)
         self.process_only_path = StringVar()
+        self.change_icon = BooleanVar(value=False)
+        self.pack_icon_path = StringVar(value="")
         self.keep_uuids = BooleanVar(value=False)
         self.busy = False
         self.log_q: queue.Queue = queue.Queue()
@@ -163,18 +167,30 @@ class VariantApp:
             frm, textvariable=self.detect_var, foreground="#1a5276", wraplength=780
         ).grid(row=3, column=0, columnspan=3, sticky="w", padx=12, pady=(0, 6))
 
-        # Namespace / version / mod name
-        meta = ttk.LabelFrame(frm, text="2. Namespace, version & mod name", padding=8)
+        # Namespace / version / mod name / icon
+        meta = ttk.LabelFrame(frm, text="2. Namespace, version, name & icon", padding=8)
         meta.grid(row=4, column=0, columnspan=3, sticky="ew", **pad)
         row_a = ttk.Frame(meta)
         row_a.pack(fill="x", pady=2)
         ttk.Label(row_a, text="Namespace:").pack(side="left")
-        ttk.Entry(row_a, textvariable=self.ns, width=18).pack(side="left", padx=6)
+        self.ns_entry = ttk.Entry(row_a, textvariable=self.ns, width=18)
+        self.ns_entry.pack(side="left", padx=6)
         ttk.Label(row_a, text="Pack version:").pack(side="left", padx=(12, 0))
         ttk.Entry(row_a, textvariable=self.pack_version, width=10).pack(side="left", padx=6)
         ttk.Label(
             row_a, text="(block ids = namespace:name)", foreground="#666"
         ).pack(side="left", padx=8)
+        row_ns = ttk.Frame(meta)
+        row_ns.pack(fill="x", pady=2)
+        ttk.Checkbutton(
+            row_ns,
+            text="Change namespace for entire pack (rewrites all block ids)",
+            variable=self.change_ns,
+            command=self._toggle_change_ns,
+        ).pack(side="left")
+        ttk.Label(row_ns, textvariable=self.original_ns, foreground="#666").pack(
+            side="left", padx=8
+        )
         row_b = ttk.Frame(meta)
         row_b.pack(fill="x", pady=4)
         ttk.Checkbutton(
@@ -193,6 +209,24 @@ class VariantApp:
             text="e.g. Rob BR Blocks Variants",
             foreground="#666",
         ).pack(side="left", padx=4)
+        row_icon = ttk.Frame(meta)
+        row_icon.pack(fill="x", pady=4)
+        ttk.Checkbutton(
+            row_icon,
+            text="Change pack icon",
+            variable=self.change_icon,
+            command=self._toggle_pack_icon,
+        ).pack(side="left")
+        ttk.Label(row_icon, text="(leave unchecked to keep existing pack_icon.png)").pack(
+            side="left", padx=6
+        )
+        row_icon2 = ttk.Frame(meta)
+        row_icon2.pack(fill="x", pady=2)
+        ttk.Label(row_icon2, text="Icon PNG:").pack(side="left")
+        self.icon_entry = ttk.Entry(row_icon2, textvariable=self.pack_icon_path, width=50)
+        self.icon_entry.pack(side="left", padx=6, fill="x", expand=True)
+        self.icon_btn = ttk.Button(row_icon2, text="Browse…", command=self._browse_pack_icon)
+        self.icon_btn.pack(side="left")
 
         # process_only
         po = ttk.LabelFrame(
@@ -246,6 +280,7 @@ class VariantApp:
         self._toggle_mode()
         self._toggle_process_only()
         self._toggle_mod_name()
+        self._toggle_pack_icon()
         self._log(
             "Ready.\n"
             "1. Click “Browse for folder…” and select your UNPACKED addon folder\n"
@@ -274,6 +309,38 @@ class VariantApp:
     def _toggle_mod_name(self) -> None:
         state = "normal" if self.rename_mod.get() else "disabled"
         self.mod_name_entry.configure(state=state)
+
+    def _toggle_change_ns(self) -> None:
+        # Namespace field always editable; when change_ns is on we rewrite whole pack
+        if self.change_ns.get():
+            self._log(
+                "Namespace change ON — will rewrite all block ids from original → new namespace.\n"
+            )
+        else:
+            self._log(
+                "Namespace change OFF — new variants use the Namespace field; "
+                "other blocks keep their existing ids.\n"
+            )
+
+    def _toggle_pack_icon(self) -> None:
+        state = "normal" if self.change_icon.get() else "disabled"
+        self.icon_entry.configure(state=state)
+        self.icon_btn.configure(state=state)
+
+    def _browse_pack_icon(self) -> None:
+        p = filedialog.askopenfilename(
+            title="Select pack icon image (.png)",
+            filetypes=[
+                ("PNG image", "*.png"),
+                ("Images", "*.png *.jpg *.jpeg"),
+                ("All files", "*.*"),
+            ],
+        )
+        if p:
+            self.pack_icon_path.set(p)
+            self.change_icon.set(True)
+            self._toggle_pack_icon()
+            self._log(f"Pack icon selected:\n  {p}\n")
 
     def _browse_addon(self) -> None:
         initial = self.addon_dir.get().strip() or str(Path.home())
@@ -341,28 +408,37 @@ class VariantApp:
                 bp, _rp = av.find_bp_rp(root)
             else:
                 bp = Path(self.bp_path.get().strip()) if self.bp_path.get().strip() else root
+            import json
+
             # Pack display name from BP manifest
             man_path = bp / "manifest.json"
             if man_path.is_file():
-                import json
-
                 man = json.loads(man_path.read_text(encoding="utf-8"))
                 cur = (man.get("header") or {}).get("name") or ""
                 if cur and not self.mod_name.get().strip():
-                    # Suggest a variants-suffixed name
                     if "variant" not in cur.lower():
                         self.mod_name.set(f"{cur} Variants")
                     else:
                         self.mod_name.set(cur)
-                    self._log(f"Current pack name: {cur} → will rename to: {self.mod_name.get()}\n")
+                    self._log(
+                        f"Current pack name: {cur} → suggested: {self.mod_name.get()}\n"
+                    )
+            # Namespace
+            det = av.detect_pack_namespace(bp) if hasattr(av, "detect_pack_namespace") else None
+            if det:
+                self.original_ns.set(f"(original: {det})")
+                self.ns.set(det)
+                self._log(f"Detected namespace: {det}\n")
+                return
             blocks = bp / "blocks"
             if not blocks.is_dir():
                 return
             for f in sorted(blocks.glob("*.json"))[:20]:
-                if any(f.stem.endswith(s) for s in ("_stairs", "_slab", "_fence", "_wall", "_gate")):
+                if any(
+                    f.stem.endswith(s)
+                    for s in ("_stairs", "_slab", "_fence", "_wall", "_gate")
+                ):
                     continue
-                import json
-
                 data = json.loads(f.read_text(encoding="utf-8"))
                 ident = (
                     data.get("minecraft:block", {})
@@ -371,6 +447,7 @@ class VariantApp:
                 )
                 if ":" in ident:
                     ns = ident.split(":", 1)[0]
+                    self.original_ns.set(f"(original: {ns})")
                     self.ns.set(ns)
                     self._log(f"Detected namespace from {f.name}: {ns}\n")
                     return
@@ -490,11 +567,36 @@ class VariantApp:
             )
             return
 
+        if self.change_icon.get():
+            icon = self.pack_icon_path.get().strip()
+            if not icon or not Path(icon).is_file():
+                messagebox.showerror(
+                    "Pack icon",
+                    "Browse for a .png icon, or uncheck “Change pack icon”.",
+                )
+                return
+        else:
+            icon = ""
+
+        # Original namespace from detection label or pack
+        orig = self.original_ns.get()
+        from_ns = ""
+        if orig.startswith("(original:") and orig.endswith(")"):
+            from_ns = orig[len("(original:") : -1].strip()
+        if self.change_ns.get() and from_ns and from_ns != ns:
+            rewrite_note = f"Rewrite namespace: {from_ns} → {ns}\n"
+        elif self.change_ns.get():
+            rewrite_note = f"Namespace change requested (target: {ns})\n"
+        else:
+            rewrite_note = ""
+
         if not messagebox.askyesno(
             "Confirm",
             f"Generate variants for namespace '{ns}'?\n\n"
             f"BP: {bp}\nRP: {rp}\n"
             + (f"Mod name: {mod_name}\n" if mod_name else "")
+            + rewrite_note
+            + (f"Pack icon: {icon}\n" if icon else "Pack icon: keep existing\n")
             + (
                 f"Only textures in:\n{po}"
                 if use_po
@@ -519,6 +621,12 @@ class VariantApp:
         ]
         if mod_name:
             argv += ["--mod-name", mod_name]
+        if self.change_ns.get():
+            argv.append("--rewrite-namespace")
+            if from_ns:
+                argv += ["--from-ns", from_ns]
+        if icon:
+            argv += ["--pack-icon", icon]
         if use_po:
             argv += ["--process-only", po]
         else:

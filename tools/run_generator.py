@@ -82,6 +82,23 @@ def main() -> int:
         if mod_name:
             cmd += ["--mod-name", mod_name]
 
+    if ask_yes_no("Change the block namespace for the entire pack?", default=False):
+        old_ns = ns
+        new_ns = ask("New namespace", ns)
+        if new_ns and new_ns != old_ns:
+            # Replace existing --ns value in cmd
+            for i, c in enumerate(cmd):
+                if c == "--ns" and i + 1 < len(cmd):
+                    cmd[i + 1] = new_ns
+                    break
+            cmd += ["--from-ns", old_ns, "--rewrite-namespace"]
+            ns = new_ns
+
+    if ask_yes_no("Change the pack icon (.png)?", default=False):
+        icon = ask("Path to icon PNG file")
+        if icon:
+            cmd += ["--pack-icon", icon]
+
     print()
     # ---- THE prompt the user requested ----
     use_list = ask_yes_no(

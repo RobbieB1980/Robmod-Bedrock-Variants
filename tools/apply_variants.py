@@ -1297,6 +1297,85 @@ def parse_version(s: str) -> list[int]:
     return parts[:3]
 
 
+def detect_pack_namespace(bp: Path) -> str | None:
+    """Return namespace from the first full-block identifier in BP/blocks."""
+    blocks = bp / "blocks"
+    if not blocks.is_dir():
+        return None
+    for f in sorted(blocks.glob("*.json")):
+        if any(f.stem.endswith(s) for s in VARIANT_SUFFIXES):
+            continue
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        ident = (
+            data.get("minecraft:block", {})
+            .get("description", {})
+            .get("identifier", "")
+        )
+        if isinstance(ident, str) and ":" in ident:
+            return ident.split(":", 1)[0]
+    return None
+
+
+def rewrite_namespace_in_pack(bp: Path, rp: Path, old_ns: str, new_ns: str) -> int:
+    """
+    Replace old_ns: → new_ns: (and quoted bare namespace) across BP/RP text files.
+    Does not rename texture shortnames (e.g. robbrblocks_brbrickblock_001 stay valid).
+    """
+    old_ns = (old_ns or "").strip()
+    new_ns = (new_ns or "").strip()
+    if not old_ns or not new_ns or old_ns == new_ns:
+        return 0
+    if not re.fullmatch(r"[A-Za-z0-9_]+", new_ns):
+        raise SystemExit(
+            f"Invalid namespace {new_ns!r} — use letters, numbers, underscore only"
+        )
+
+    exts = {".json", ".js", ".lang", ".mcfunction", ".txt"}
+    changed = 0
+    for root in (bp, rp):
+        if not root.is_dir():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in exts:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except Exception:
+                continue
+            if old_ns not in text:
+                continue
+            new_text = text.replace(f"{old_ns}:", f"{new_ns}:")
+            # Bare namespace in script constants: "robbrblocks" / 'robbrblocks'
+            new_text = new_text.replace(f'"{old_ns}"', f'"{new_ns}"')
+            new_text = new_text.replace(f"'{old_ns}'", f"'{new_ns}'")
+            if new_text != text:
+                path.write_text(new_text, encoding="utf-8")
+                changed += 1
+    print(f"Namespace rewrite {old_ns!r} → {new_ns!r} updated {changed} file(s)")
+    return changed
+
+
+def install_pack_icon(bp: Path, rp: Path, icon_path: Path) -> None:
+    """Copy a .png to pack_icon.png in both BP and RP."""
+    src = Path(icon_path)
+    if not src.is_file():
+        raise SystemExit(f"Pack icon not found: {src}")
+    if src.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+        raise SystemExit(f"Pack icon must be an image file (.png preferred): {src}")
+    for pack in (bp, rp):
+        dest = pack / "pack_icon.png"
+        # Always store as pack_icon.png (Bedrock standard)
+        if src.suffix.lower() == ".png":
+            shutil.copy2(src, dest)
+        else:
+            # Best-effort: copy bytes with .png name (engine usually wants PNG)
+            shutil.copy2(src, dest)
+        print(f"Pack icon → {dest}")
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(
         description="Apply Robmod-Bedrock-Variants patterns to a Bedrock pack"
@@ -1355,6 +1434,23 @@ def main(argv: list[str] | None = None) -> None:
         help="Rename the mod display name in BP+RP manifests (what appears in Minecraft pack list)",
     )
     ap.add_argument(
+        "--from-ns",
+        default=None,
+        help="Original namespace to rewrite FROM when changing namespace across the pack "
+        "(default: auto-detect). Use with --ns as the new namespace.",
+    )
+    ap.add_argument(
+        "--rewrite-namespace",
+        action="store_true",
+        help="Rewrite all old_ns: identifiers in the pack to --ns (for unprocessed blocks too)",
+    )
+    ap.add_argument(
+        "--pack-icon",
+        type=Path,
+        default=None,
+        help="PNG image to set as pack_icon.png on both BP and RP (leave unset to keep existing)",
+    )
+    ap.add_argument(
         "--no-script", action="store_true", help="Do not overwrite scripts/main.js"
     )
     ap.add_argument(
@@ -1405,7 +1501,11 @@ def main(argv: list[str] | None = None) -> None:
         ap.error("--ns is required unless using --uuids-only")
     ns = args.ns
     geo_prefix = args.geo_prefix or f"geometry.{ns}"
+    # Capture original namespace BEFORE we rewrite block identifiers
+    original_ns = (args.from_ns or "").strip() or detect_pack_namespace(bp)
     print(f"NS: {ns}  geo: {geo_prefix}")
+    if original_ns:
+        print(f"Detected original namespace: {original_ns}")
 
     if args.remove_fencepost_only:
         n = remove_all_fenceposts(bp, rp, ns)
@@ -1481,6 +1581,19 @@ def main(argv: list[str] | None = None) -> None:
             raise SystemExit(f"Script template missing: {args.script_template}")
         write_script(bp, ns, args.script_template)
         print(f"Wrote scripts/main.js (ns={ns})")
+
+    # Optional: rewrite entire pack namespace (covers unprocessed blocks + leftovers)
+    if args.rewrite_namespace:
+        old = (args.from_ns or original_ns or "").strip()
+        if old and old != ns:
+            print(f"Rewriting pack namespace {old!r} → {ns!r} …")
+            rewrite_namespace_in_pack(bp, rp, old, ns)
+        else:
+            print("Namespace rewrite skipped (no different original namespace).")
+
+    # Pack icon (leave existing if --pack-icon not set)
+    if args.pack_icon:
+        install_pack_icon(bp, rp, Path(args.pack_icon))
 
     # Final step: rename mod (optional) + fresh pack UUIDs
     print("Final step: regenerating pack UUIDs…" if not args.keep_uuids else "Keeping existing pack UUIDs…")
