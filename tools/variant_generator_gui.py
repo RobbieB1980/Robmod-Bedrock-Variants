@@ -85,6 +85,8 @@ class VariantApp:
         self.rp_path = StringVar()
         self.ns = StringVar(value="mymod")
         self.pack_version = StringVar(value="1.0.0")
+        self.rename_mod = BooleanVar(value=True)
+        self.mod_name = StringVar(value="")
         self.use_process_only = BooleanVar(value=True)
         self.process_only_path = StringVar()
         self.keep_uuids = BooleanVar(value=False)
@@ -161,16 +163,36 @@ class VariantApp:
             frm, textvariable=self.detect_var, foreground="#1a5276", wraplength=780
         ).grid(row=3, column=0, columnspan=3, sticky="w", padx=12, pady=(0, 6))
 
-        # Namespace / version
-        meta = ttk.LabelFrame(frm, text="2. Namespace & version", padding=8)
+        # Namespace / version / mod name
+        meta = ttk.LabelFrame(frm, text="2. Namespace, version & mod name", padding=8)
         meta.grid(row=4, column=0, columnspan=3, sticky="ew", **pad)
-        ttk.Label(meta, text="Namespace:").pack(side="left")
-        ttk.Entry(meta, textvariable=self.ns, width=20).pack(side="left", padx=6)
-        ttk.Label(meta, text="Pack version:").pack(side="left", padx=(16, 0))
-        ttk.Entry(meta, textvariable=self.pack_version, width=12).pack(side="left", padx=6)
+        row_a = ttk.Frame(meta)
+        row_a.pack(fill="x", pady=2)
+        ttk.Label(row_a, text="Namespace:").pack(side="left")
+        ttk.Entry(row_a, textvariable=self.ns, width=18).pack(side="left", padx=6)
+        ttk.Label(row_a, text="Pack version:").pack(side="left", padx=(12, 0))
+        ttk.Entry(row_a, textvariable=self.pack_version, width=10).pack(side="left", padx=6)
         ttk.Label(
-            meta, text="(block ids = namespace:blockname)", foreground="#666"
+            row_a, text="(block ids = namespace:name)", foreground="#666"
         ).pack(side="left", padx=8)
+        row_b = ttk.Frame(meta)
+        row_b.pack(fill="x", pady=4)
+        ttk.Checkbutton(
+            row_b,
+            text="Rename mod display name (shown in Minecraft pack list)",
+            variable=self.rename_mod,
+            command=self._toggle_mod_name,
+        ).pack(side="left")
+        row_c = ttk.Frame(meta)
+        row_c.pack(fill="x", pady=2)
+        ttk.Label(row_c, text="Mod name:").pack(side="left")
+        self.mod_name_entry = ttk.Entry(row_c, textvariable=self.mod_name, width=40)
+        self.mod_name_entry.pack(side="left", padx=6, fill="x", expand=True)
+        ttk.Label(
+            row_c,
+            text="e.g. Rob BR Blocks Variants",
+            foreground="#666",
+        ).pack(side="left", padx=4)
 
         # process_only
         po = ttk.LabelFrame(
@@ -223,6 +245,7 @@ class VariantApp:
 
         self._toggle_mode()
         self._toggle_process_only()
+        self._toggle_mod_name()
         self._log(
             "Ready.\n"
             "1. Click “Browse for folder…” and select your UNPACKED addon folder\n"
@@ -247,6 +270,10 @@ class VariantApp:
         state = "normal" if self.use_process_only.get() else "disabled"
         self.po_entry.configure(state=state)
         self.po_btn.configure(state=state)
+
+    def _toggle_mod_name(self) -> None:
+        state = "normal" if self.rename_mod.get() else "disabled"
+        self.mod_name_entry.configure(state=state)
 
     def _browse_addon(self) -> None:
         initial = self.addon_dir.get().strip() or str(Path.home())
@@ -306,7 +333,7 @@ class VariantApp:
                 return
 
     def _guess_namespace(self, root: Path) -> None:
-        """Try to read first block JSON identifier namespace."""
+        """Try to read first block JSON identifier namespace + pack display name."""
         if av is None:
             return
         try:
@@ -314,6 +341,20 @@ class VariantApp:
                 bp, _rp = av.find_bp_rp(root)
             else:
                 bp = Path(self.bp_path.get().strip()) if self.bp_path.get().strip() else root
+            # Pack display name from BP manifest
+            man_path = bp / "manifest.json"
+            if man_path.is_file():
+                import json
+
+                man = json.loads(man_path.read_text(encoding="utf-8"))
+                cur = (man.get("header") or {}).get("name") or ""
+                if cur and not self.mod_name.get().strip():
+                    # Suggest a variants-suffixed name
+                    if "variant" not in cur.lower():
+                        self.mod_name.set(f"{cur} Variants")
+                    else:
+                        self.mod_name.set(cur)
+                    self._log(f"Current pack name: {cur} → will rename to: {self.mod_name.get()}\n")
             blocks = bp / "blocks"
             if not blocks.is_dir():
                 return
@@ -441,10 +482,19 @@ class VariantApp:
             ):
                 return
 
+        mod_name = self.mod_name.get().strip() if self.rename_mod.get() else ""
+        if self.rename_mod.get() and not mod_name:
+            messagebox.showerror(
+                "Mod name",
+                "Enter a mod display name, or uncheck “Rename mod display name”.",
+            )
+            return
+
         if not messagebox.askyesno(
             "Confirm",
             f"Generate variants for namespace '{ns}'?\n\n"
             f"BP: {bp}\nRP: {rp}\n"
+            + (f"Mod name: {mod_name}\n" if mod_name else "")
             + (
                 f"Only textures in:\n{po}"
                 if use_po
@@ -467,6 +517,8 @@ class VariantApp:
             "--script-template",
             str(DEFAULT_SCRIPT),
         ]
+        if mod_name:
+            argv += ["--mod-name", mod_name]
         if use_po:
             argv += ["--process-only", po]
         else:
@@ -493,6 +545,8 @@ class VariantApp:
             "--pack-version",
             self.pack_version.get().strip() or "1.0.0",
         ]
+        if self.rename_mod.get() and self.mod_name.get().strip():
+            argv += ["--mod-name", self.mod_name.get().strip()]
         self._start_worker(argv)
 
     def _start_worker(self, argv: list[str]) -> None:

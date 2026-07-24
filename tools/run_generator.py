@@ -77,6 +77,11 @@ def main() -> int:
     pack_ver = ask("Pack version to write into manifests", "1.0.0")
     cmd += ["--pack-version", pack_ver]
 
+    if ask_yes_no("Rename the mod display name (shown in Minecraft pack list)?", default=True):
+        mod_name = ask("New mod name", f"{ns} Variants")
+        if mod_name:
+            cmd += ["--mod-name", mod_name]
+
     print()
     # ---- THE prompt the user requested ----
     use_list = ask_yes_no(

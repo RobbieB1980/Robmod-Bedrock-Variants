@@ -1140,18 +1140,47 @@ def regenerate_pack_uuids(bp: Path, rp: Path) -> dict[str, str]:
     return ids
 
 
+def apply_mod_name(data: dict, mod_name: str, *, is_bp: bool, version: list[int]) -> None:
+    """Set pack display name + descriptions in a manifest dict."""
+    name = mod_name.strip()
+    if not name:
+        return
+    ver_s = ".".join(str(v) for v in version)
+    data.setdefault("header", {})
+    data["header"]["name"] = name
+    if is_bp:
+        data["header"]["description"] = (
+            f"{name} (v{ver_s}) — stairs, slabs, fences, walls, gates"
+        )
+        for mod in data.get("modules", []):
+            t = mod.get("type")
+            if t == "data":
+                mod["description"] = f"{name} — behaviour / blocks"
+            elif t == "script":
+                mod["description"] = f"{name} — variant scripts"
+    else:
+        data["header"]["description"] = (
+            f"{name} (v{ver_s}) — textures, models, PBR resources"
+        )
+        for mod in data.get("modules", []):
+            if mod.get("type") == "resources":
+                mod["description"] = f"{name} — resources"
+
+
 def bump_manifests(
     bp: Path,
     rp: Path,
     version: list[int],
     *,
     regenerate_uuids: bool = True,
+    mod_name: str | None = None,
 ) -> dict[str, str] | None:
     """
-    Bump versions / engine / script module, then optionally regenerate all pack UUIDs
-    (default on — final step so each apply is a unique pack pair).
+    Bump versions / engine / script module, optionally rename the mod, then
+    optionally regenerate all pack UUIDs (default on).
     """
     uuid_map: dict[str, str] | None = None
+    name = (mod_name or "").strip() or None
 
     for path, is_bp in ((bp / "manifest.json", True), (rp / "manifest.json", False)):
         if not path.is_file():
@@ -1160,6 +1189,8 @@ def bump_manifests(
         data = json.loads(path.read_text(encoding="utf-8"))
         data["header"]["version"] = version
         data["header"]["min_engine_version"] = MIN_ENGINE
+        if name:
+            apply_mod_name(data, name, is_bp=is_bp, version=version)
         for mod in data.get("modules", []):
             mod["version"] = version
         if is_bp:
@@ -1173,7 +1204,9 @@ def bump_manifests(
             if "script" not in types:
                 data.setdefault("modules", []).append(
                     {
-                        "description": "Variant scripts (fence/wall/slab/gate)",
+                        "description": (
+                            f"{name} — variant scripts" if name else "Variant scripts (fence/wall/slab/gate)"
+                        ),
                         "type": "script",
                         "language": "javascript",
                         "uuid": new_uuid() if regenerate_uuids else "a7c3e91f-4b2d-4e8a-9f1c-6d5e8b0a2c34",
@@ -1193,12 +1226,14 @@ def bump_manifests(
 
     if regenerate_uuids:
         uuid_map = regenerate_pack_uuids(bp, rp)
-        # Re-apply version stamps on UUID-linked dependency after rewrite
+        # Re-apply version stamps + mod name after UUID rewrite
         bp_path = bp / "manifest.json"
         if bp_path.is_file():
             data = json.loads(bp_path.read_text(encoding="utf-8"))
             data["header"]["version"] = version
             data["header"]["min_engine_version"] = MIN_ENGINE
+            if name:
+                apply_mod_name(data, name, is_bp=True, version=version)
             for mod in data.get("modules", []):
                 mod["version"] = version
             for dep in data.get("dependencies", []):
@@ -1212,9 +1247,14 @@ def bump_manifests(
             data = json.loads(rp_path.read_text(encoding="utf-8"))
             data["header"]["version"] = version
             data["header"]["min_engine_version"] = MIN_ENGINE
+            if name:
+                apply_mod_name(data, name, is_bp=False, version=version)
             for mod in data.get("modules", []):
                 mod["version"] = version
             dump(rp_path, data)
+
+    if name:
+        print(f"Mod display name set to: {name}")
 
     return uuid_map
 
@@ -1310,6 +1350,11 @@ def main(argv: list[str] | None = None) -> None:
         help="Pack version to write into manifests (default 1.0.0)",
     )
     ap.add_argument(
+        "--mod-name",
+        default=None,
+        help="Rename the mod display name in BP+RP manifests (what appears in Minecraft pack list)",
+    )
+    ap.add_argument(
         "--no-script", action="store_true", help="Do not overwrite scripts/main.js"
     )
     ap.add_argument(
@@ -1344,8 +1389,12 @@ def main(argv: list[str] | None = None) -> None:
     print(f"BP: {bp}")
     print(f"RP: {rp}")
 
+    mod_name = (args.mod_name or "").strip() or None
+
     if args.uuids_only:
-        ids = bump_manifests(bp, rp, version, regenerate_uuids=True) or {}
+        ids = bump_manifests(
+            bp, rp, version, regenerate_uuids=True, mod_name=mod_name
+        ) or {}
         print("Regenerated pack UUIDs (final step):")
         for k, v in ids.items():
             print(f"  {k}: {v}")
@@ -1433,10 +1482,16 @@ def main(argv: list[str] | None = None) -> None:
         write_script(bp, ns, args.script_template)
         print(f"Wrote scripts/main.js (ns={ns})")
 
-    # Final step: fresh pack UUIDs so this apply never clashes with the source mod
+    # Final step: rename mod (optional) + fresh pack UUIDs
     print("Final step: regenerating pack UUIDs…" if not args.keep_uuids else "Keeping existing pack UUIDs…")
+    if mod_name:
+        print(f"Renaming mod display name → {mod_name!r}")
     ids = bump_manifests(
-        bp, rp, version, regenerate_uuids=not args.keep_uuids
+        bp,
+        rp,
+        version,
+        regenerate_uuids=not args.keep_uuids,
+        mod_name=mod_name,
     )
     if ids:
         print("Pack UUIDs:")
