@@ -392,32 +392,71 @@ class VariantApp:
         self._set_busy(True)
         self._log("\n" + "=" * 60 + "\nStarting…\n")
         self._log(" ".join(argv) + "\n\n")
+        # Resolve kit paths at click-time (exe-safe)
+        geo = DEFAULT_GEO if DEFAULT_GEO.is_dir() else (REPO_DIR / "kit" / "geometries")
+        script = (
+            DEFAULT_SCRIPT
+            if DEFAULT_SCRIPT.is_file()
+            else (REPO_DIR / "kit" / "templates" / "main.js")
+        )
+        # Inject absolute kit paths if caller used relative defaults
+        if "--geo-dir" not in argv:
+            argv = argv + ["--geo-dir", str(geo)]
+        if "--script-template" not in argv and "--uuids-only" not in argv:
+            argv = argv + ["--script-template", str(script)]
+        self._log(f"geo-dir={geo} exists={geo.is_dir()}\n")
+        self._log(f"script={script} exists={script.is_file()}\n\n")
+
+        result: dict = {"ok": False, "msg": ""}
 
         def worker() -> None:
             old_out, old_err = sys.stdout, sys.stderr
             sys.stdout = sys.stderr = GuiLog(self.log_q)
             try:
+                if not geo.is_dir() and "--uuids-only" not in argv and "--no-geometries" not in argv:
+                    raise SystemExit(
+                        f"Kit geometries missing:\n{geo}\n"
+                        "Keep the kit\\ folder next to the .exe."
+                    )
                 av.main(argv)
+                result["ok"] = True
+                result["msg"] = (
+                    "Finished successfully.\n\n"
+                    "If /give fails in game:\n"
+                    "• Copy BP and RP into development_*_packs (two separate folders)\n"
+                    "• Enable BOTH packs on the world\n"
+                    "• Use the namespace you typed, e.g. /give @s robbrblocks:brbrickblock_001_stairs\n"
+                    "• Need Minecraft Bedrock 1.26+\n"
+                    "Check the log for the exact BP/RP paths written."
+                )
                 self.log_q.put("\n*** Finished successfully ***\n")
             except SystemExit as e:
                 code = e.code if isinstance(e.code, int) else 1
-                if code:
-                    self.log_q.put(f"\n*** Exited with code {code} ***\n")
-                else:
+                msg = e.code if isinstance(e.code, str) else str(e)
+                if code in (0, None) and not isinstance(e.code, str):
+                    result["ok"] = True
+                    result["msg"] = "Finished successfully. Check the log for install paths."
                     self.log_q.put("\n*** Finished successfully ***\n")
-            except Exception:
+                else:
+                    result["ok"] = False
+                    result["msg"] = msg if isinstance(e.code, str) else f"Failed (exit {code}). See log."
+                    self.log_q.put(f"\n*** FAILED: {result['msg']} ***\n")
+            except Exception as e:
+                result["ok"] = False
+                result["msg"] = str(e)
                 self.log_q.put("\n*** ERROR ***\n")
                 self.log_q.put(traceback.format_exc())
             finally:
                 sys.stdout, sys.stderr = old_out, old_err
-                self.root.after(0, lambda: self._set_busy(False))
-                self.root.after(
-                    0,
-                    lambda: messagebox.showinfo(
-                        "Done",
-                        "Generator finished. Check the log panel for details.",
-                    ),
-                )
+
+                def done() -> None:
+                    self._set_busy(False)
+                    if result["ok"]:
+                        messagebox.showinfo("Success", result["msg"])
+                    else:
+                        messagebox.showerror("Failed", result["msg"] or "See log panel.")
+
+                self.root.after(0, done)
 
         threading.Thread(target=worker, daemon=True).start()
 

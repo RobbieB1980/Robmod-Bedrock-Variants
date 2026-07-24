@@ -30,9 +30,23 @@ import uuid
 from collections import defaultdict
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[1]
-DEFAULT_GEO_DIR = REPO / "kit" / "geometries"
-DEFAULT_SCRIPT_TEMPLATE = REPO / "kit" / "templates" / "main.js"
+def _resolve_repo_and_kit() -> tuple[Path, Path, Path]:
+    """Return (repo_or_app_dir, geo_dir, script_template) for script or frozen .exe."""
+    if getattr(sys, "frozen", False):
+        # onedir: exe + kit/ sit together; _MEIPASS has bundled python only
+        app_dir = Path(sys.executable).resolve().parent
+        meipass = Path(getattr(sys, "_MEIPASS", app_dir))
+        for base in (app_dir, meipass):
+            geo = base / "kit" / "geometries"
+            script = base / "kit" / "templates" / "main.js"
+            if geo.is_dir() and script.is_file():
+                return base, geo, script
+        return app_dir, app_dir / "kit" / "geometries", app_dir / "kit" / "templates" / "main.js"
+    repo = Path(__file__).resolve().parents[1]
+    return repo, repo / "kit" / "geometries", repo / "kit" / "templates" / "main.js"
+
+
+REPO, DEFAULT_GEO_DIR, DEFAULT_SCRIPT_TEMPLATE = _resolve_repo_and_kit()
 
 FORMAT = "1.26.30"
 MIN_ENGINE = [1, 26, 0]
@@ -1429,10 +1443,38 @@ def main(argv: list[str] | None = None) -> None:
         for k, v in ids.items():
             print(f"  {k}: {v}")
 
+    # Hard verification — catch "success" that wrote nothing
+    sample = bases[0]
+    required = [
+        bp / "blocks" / f"{sample}.json",
+        bp / "blocks" / f"{sample}_stairs.json",
+        bp / "blocks" / f"{sample}_slab.json",
+        bp / "blocks" / f"{sample}_fence.json",
+        bp / "blocks" / f"{sample}_wall.json",
+        bp / "blocks" / f"{sample}_fence_gate.json",
+        bp / "scripts" / "main.js",
+        bp / "manifest.json",
+        rp / "manifest.json",
+    ]
+    missing = [str(p) for p in required if not p.is_file()]
+    if missing:
+        raise SystemExit(
+            "VERIFY FAILED — expected output files missing:\n  "
+            + "\n  ".join(missing[:12])
+        )
+    stairs_n = len(list((bp / "blocks").glob("*_stairs.json")))
+    print(f"Verify OK: {stairs_n} stairs files, sample {ns}:{sample}_stairs")
+    print()
     print("Done.")
     print(
-        "Install BP+RP separately (not the parent folder). "
-        "Enable both packs. Bedrock 1.26+ required."
+        "IMPORTANT: Minecraft must load THESE folders (or a copy of them):\n"
+        f"  BP: {bp}\n"
+        f"  RP: {rp}\n"
+        "Copy each into development_behavior_packs / development_resource_packs\n"
+        "separately, enable BOTH on the world, then:\n"
+        f"  /give @s {ns}:{sample}\n"
+        f"  /give @s {ns}:{sample}_stairs\n"
+        "Bedrock 1.26+ required."
     )
 
 
