@@ -106,65 +106,79 @@ class VariantApp:
         ).grid(row=0, column=0, columnspan=3, sticky="w", **pad)
 
         # Mode
-        mode_fr = ttk.LabelFrame(frm, text="Pack location", padding=8)
+        mode_fr = ttk.LabelFrame(frm, text="1. Where is your pack? (Browse to select)", padding=8)
         mode_fr.grid(row=1, column=0, columnspan=3, sticky="ew", **pad)
         ttk.Radiobutton(
             mode_fr,
-            text="Unpacked addon folder (contains BP + RP)",
+            text="Unpacked addon folder (recommended) — folder that contains both BP and RP",
             variable=self.mode,
             value="addon",
             command=self._toggle_mode,
-        ).grid(row=0, column=0, sticky="w")
+        ).grid(row=0, column=0, columnspan=2, sticky="w")
         ttk.Radiobutton(
             mode_fr,
-            text="Separate behaviour + resource packs",
+            text="Separate behaviour pack + resource pack folders",
             variable=self.mode,
             value="split",
             command=self._toggle_mode,
-        ).grid(row=0, column=1, sticky="w", padx=12)
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
 
         self.addon_row = ttk.Frame(frm)
         self.addon_row.grid(row=2, column=0, columnspan=3, sticky="ew", **pad)
         ttk.Label(self.addon_row, text="Addon folder:").pack(side="left")
-        ttk.Entry(self.addon_row, textvariable=self.addon_dir, width=70).pack(
+        ttk.Entry(self.addon_row, textvariable=self.addon_dir, width=62).pack(
             side="left", fill="x", expand=True, padx=6
         )
-        ttk.Button(self.addon_row, text="Browse…", command=self._browse_addon).pack(
-            side="left"
-        )
+        ttk.Button(
+            self.addon_row,
+            text="Browse for folder…",
+            command=self._browse_addon,
+        ).pack(side="left")
 
         self.split_row = ttk.Frame(frm)
         # packed later by mode
         r1 = ttk.Frame(self.split_row)
         r1.pack(fill="x", pady=2)
         ttk.Label(r1, text="Behaviour pack:", width=16).pack(side="left")
-        ttk.Entry(r1, textvariable=self.bp_path, width=60).pack(
+        ttk.Entry(r1, textvariable=self.bp_path, width=55).pack(
             side="left", fill="x", expand=True, padx=6
         )
         ttk.Button(r1, text="Browse…", command=self._browse_bp).pack(side="left")
         r2 = ttk.Frame(self.split_row)
         r2.pack(fill="x", pady=2)
         ttk.Label(r2, text="Resource pack:", width=16).pack(side="left")
-        ttk.Entry(r2, textvariable=self.rp_path, width=60).pack(
+        ttk.Entry(r2, textvariable=self.rp_path, width=55).pack(
             side="left", fill="x", expand=True, padx=6
         )
         ttk.Button(r2, text="Browse…", command=self._browse_rp).pack(side="left")
 
+        # Detected BP/RP status (updates after Browse)
+        self.detect_var = StringVar(
+            value="No pack selected yet — click “Browse for folder…” and pick the unpacked addon "
+            "(e.g. F:\\Grok Working\\robbrblocks)."
+        )
+        ttk.Label(
+            frm, textvariable=self.detect_var, foreground="#1a5276", wraplength=780
+        ).grid(row=3, column=0, columnspan=3, sticky="w", padx=12, pady=(0, 6))
+
         # Namespace / version
-        meta = ttk.Frame(frm)
-        meta.grid(row=3, column=0, columnspan=3, sticky="ew", **pad)
+        meta = ttk.LabelFrame(frm, text="2. Namespace & version", padding=8)
+        meta.grid(row=4, column=0, columnspan=3, sticky="ew", **pad)
         ttk.Label(meta, text="Namespace:").pack(side="left")
         ttk.Entry(meta, textvariable=self.ns, width=20).pack(side="left", padx=6)
         ttk.Label(meta, text="Pack version:").pack(side="left", padx=(16, 0))
         ttk.Entry(meta, textvariable=self.pack_version, width=12).pack(side="left", padx=6)
+        ttk.Label(
+            meta, text="(block ids = namespace:blockname)", foreground="#666"
+        ).pack(side="left", padx=8)
 
         # process_only
         po = ttk.LabelFrame(
             frm,
-            text="Textures only to process (recommended)",
+            text="3. Textures only to process (recommended)",
             padding=8,
         )
-        po.grid(row=4, column=0, columnspan=3, sticky="ew", **pad)
+        po.grid(row=5, column=0, columnspan=3, sticky="ew", **pad)
         ttk.Checkbutton(
             po,
             text="Use a file that lists textures only to process (process_only.xlsx)",
@@ -188,12 +202,12 @@ class VariantApp:
             frm,
             text="Keep existing pack UUIDs (normally leave unchecked — generate fresh)",
             variable=self.keep_uuids,
-        ).grid(row=5, column=0, columnspan=3, sticky="w", **pad)
+        ).grid(row=6, column=0, columnspan=3, sticky="w", **pad)
 
         # Actions
         act = ttk.Frame(frm)
-        act.grid(row=6, column=0, columnspan=3, sticky="ew", **pad)
-        self.run_btn = ttk.Button(act, text="Generate variants", command=self._run)
+        act.grid(row=7, column=0, columnspan=3, sticky="ew", **pad)
+        self.run_btn = ttk.Button(act, text="4. Generate variants", command=self._run)
         self.run_btn.pack(side="left")
         ttk.Button(act, text="UUID only", command=self._run_uuids_only).pack(
             side="left", padx=8
@@ -201,16 +215,20 @@ class VariantApp:
         ttk.Button(act, text="Quit", command=self.root.destroy).pack(side="right")
 
         # Log
-        ttk.Label(frm, text="Log").grid(row=7, column=0, sticky="w", padx=10)
-        self.log = ScrolledText(frm, height=18, wrap="word", state="disabled")
-        self.log.grid(row=8, column=0, columnspan=3, sticky="nsew", padx=10, pady=4)
-        frm.rowconfigure(8, weight=1)
+        ttk.Label(frm, text="Log").grid(row=8, column=0, sticky="w", padx=10)
+        self.log = ScrolledText(frm, height=16, wrap="word", state="disabled")
+        self.log.grid(row=9, column=0, columnspan=3, sticky="nsew", padx=10, pady=4)
+        frm.rowconfigure(9, weight=1)
         frm.columnconfigure(0, weight=1)
 
         self._toggle_mode()
         self._toggle_process_only()
         self._log(
-            "Ready. Select your pack, optionally process_only.xlsx, then Generate.\n"
+            "Ready.\n"
+            "1. Click “Browse for folder…” and select your UNPACKED addon folder\n"
+            "   (the folder that contains both behaviour + resource packs).\n"
+            "2. Confirm namespace and process_only.xlsx if you have one.\n"
+            "3. Click Generate variants.\n"
             f"Kit geos: {DEFAULT_GEO}\n"
         )
         if av is None:
@@ -223,6 +241,7 @@ class VariantApp:
         else:
             self.addon_row.grid_forget()
             self.split_row.grid(row=2, column=0, columnspan=3, sticky="ew", padx=10, pady=4)
+        self._refresh_detected()
 
     def _toggle_process_only(self) -> None:
         state = "normal" if self.use_process_only.get() else "disabled"
@@ -230,25 +249,39 @@ class VariantApp:
         self.po_btn.configure(state=state)
 
     def _browse_addon(self) -> None:
-        p = filedialog.askdirectory(title="Select unpacked addon folder")
+        initial = self.addon_dir.get().strip() or str(Path.home())
+        p = filedialog.askdirectory(
+            title="Select UNPACKED addon folder (contains BP + RP subfolders)",
+            initialdir=initial if Path(initial).is_dir() else str(Path.home()),
+        )
         if p:
             self.addon_dir.set(p)
+            self._log(f"Selected addon folder:\n  {p}\n")
             self._guess_process_only(Path(p))
+            self._guess_namespace(Path(p))
+            self._refresh_detected()
 
     def _browse_bp(self) -> None:
         p = filedialog.askdirectory(title="Select behaviour pack folder")
         if p:
             self.bp_path.set(p)
             self._guess_process_only(Path(p).parent)
+            self._guess_namespace(Path(p))
+            self._refresh_detected()
 
     def _browse_rp(self) -> None:
         p = filedialog.askdirectory(title="Select resource pack folder")
         if p:
             self.rp_path.set(p)
+            self._refresh_detected()
 
     def _browse_process_only(self) -> None:
+        initial = self.process_only_path.get().strip()
+        if not initial:
+            initial = self.addon_dir.get().strip() or self.bp_path.get().strip()
         p = filedialog.askopenfilename(
-            title="Select process_only.xlsx",
+            title="Select process_only.xlsx (texture list)",
+            initialdir=str(Path(initial).parent) if initial else str(Path.home()),
             filetypes=[
                 ("Excel", "*.xlsx *.xls"),
                 ("All files", "*.*"),
@@ -256,17 +289,91 @@ class VariantApp:
         )
         if p:
             self.process_only_path.set(p)
+            self._log(f"process_only list:\n  {p}\n")
 
     def _guess_process_only(self, root: Path) -> None:
-        if self.process_only_path.get():
-            return
-        for name in ("process_only.xlsx", "process_only.xls", "files to create variants.xlsx"):
+        for name in (
+            "process_only.xlsx",
+            "process_only.xls",
+            "files to create variants.xlsx",
+        ):
             cand = root / name
             if cand.is_file():
                 self.process_only_path.set(str(cand))
                 self.use_process_only.set(True)
                 self._toggle_process_only()
+                self._log(f"Found {name} in folder — will use it as texture allow-list.\n")
                 return
+
+    def _guess_namespace(self, root: Path) -> None:
+        """Try to read first block JSON identifier namespace."""
+        if av is None:
+            return
+        try:
+            if self.mode.get() == "addon":
+                bp, _rp = av.find_bp_rp(root)
+            else:
+                bp = Path(self.bp_path.get().strip()) if self.bp_path.get().strip() else root
+            blocks = bp / "blocks"
+            if not blocks.is_dir():
+                return
+            for f in sorted(blocks.glob("*.json"))[:20]:
+                if any(f.stem.endswith(s) for s in ("_stairs", "_slab", "_fence", "_wall", "_gate")):
+                    continue
+                import json
+
+                data = json.loads(f.read_text(encoding="utf-8"))
+                ident = (
+                    data.get("minecraft:block", {})
+                    .get("description", {})
+                    .get("identifier", "")
+                )
+                if ":" in ident:
+                    ns = ident.split(":", 1)[0]
+                    self.ns.set(ns)
+                    self._log(f"Detected namespace from {f.name}: {ns}\n")
+                    return
+        except Exception as e:
+            self._log(f"(Could not auto-detect namespace: {e})\n")
+
+    def _refresh_detected(self) -> None:
+        """Show which BP/RP will be used after Browse."""
+        if av is None:
+            self.detect_var.set("ERROR: apply_variants module not loaded.")
+            return
+        try:
+            if self.mode.get() == "addon":
+                d = self.addon_dir.get().strip()
+                if not d:
+                    self.detect_var.set(
+                        "No pack selected yet — click “Browse for folder…” and pick the "
+                        "unpacked addon (e.g. F:\\Grok Working\\robbrblocks)."
+                    )
+                    return
+                root = Path(d)
+                if not root.is_dir():
+                    self.detect_var.set(f"Folder not found: {d}")
+                    return
+                bp, rp = av.find_bp_rp(root)
+            else:
+                bp_s = self.bp_path.get().strip()
+                rp_s = self.rp_path.get().strip()
+                if not bp_s or not rp_s:
+                    self.detect_var.set("Select both behaviour pack and resource pack folders.")
+                    return
+                bp, rp = Path(bp_s), Path(rp_s)
+                if not bp.is_dir() or not rp.is_dir():
+                    self.detect_var.set("BP or RP path is not a valid folder.")
+                    return
+            self.detect_var.set(
+                f"Will read/write:\n  BP → {bp}\n  RP → {rp}\n"
+                f"(Generator updates these folders in place.)"
+            )
+            self._log(f"Detected packs:\n  BP: {bp}\n  RP: {rp}\n")
+        except SystemExit as e:
+            self.detect_var.set(str(e.code) if e.code else str(e))
+        except Exception as e:
+            self.detect_var.set(f"Could not detect packs: {e}")
 
     def _log(self, text: str) -> None:
         self.log.configure(state="normal")
