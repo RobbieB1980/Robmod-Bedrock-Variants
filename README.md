@@ -10,7 +10,7 @@ Portable, **working** reference + mass-apply kit for vanilla-compatible custom b
 | Stairs (corners L/R) | Working |
 | Slab (single / double / sides top&bottom / on full) | Working |
 | Fence (all axes, E↔W mesh swap) | Working |
-| Wall (short/tall, E↔W mesh swap) | Working |
+| Wall (none/tall only, 32 perms, E↔W mesh swap) | Working |
 | Fence gate (open / redstone / in-wall) | Working |
 | Fence post | **Removed** — duplicate of fence |
 

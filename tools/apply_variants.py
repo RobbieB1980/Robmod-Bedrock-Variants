@@ -528,7 +528,10 @@ def build_fence_perms(ns: str, geo: str) -> list:
 
 
 def build_wall_perms(ns: str, geo: str) -> list:
-    sides = ("none", "short", "tall")
+    # Tall-only side states (no short): 2^4 × post = 32 combos (skip all-none + no post → 31 perms).
+    # Full none/short/tall was 162 each and blew past Bedrock's 65536 custom-permutation budget
+    # on large material packs (e.g. hundreds of walls).
+    sides = ("none", "tall")
     perms = []
     for n in sides:
         for e in sides:
@@ -537,17 +540,13 @@ def build_wall_perms(ns: str, geo: str) -> list:
                     for post in (True, False):
                         if not post and n == e == s == w == "none":
                             continue
-                        height = (
-                            "tall"
-                            if any(x == "tall" for x in (n, e, s, w))
-                            else "short"
-                        )
+                        height = "tall"
                         gn = 1 if n != "none" else 0
                         ge = 1 if w != "none" else 0  # E↔W
                         gs = 1 if s != "none" else 0
                         gw = 1 if e != "none" else 0
                         if gn == ge == gs == gw == 0 and post:
-                            g = f"{geo}.wall_p1_0000_short"
+                            g = f"{geo}.wall_p1_0000_tall"
                         else:
                             g = f"{geo}.wall_p{int(post)}_{gn}{ge}{gs}{gw}_{height}"
                         coll = wall_collision(post, n, w, s, e)
@@ -872,10 +871,10 @@ def write_block_set(
                         "group": "minecraft:itemGroup.name.walls",
                     },
                     "states": {
-                        f"{ns}:wall_n": ["none", "short", "tall"],
-                        f"{ns}:wall_e": ["none", "short", "tall"],
-                        f"{ns}:wall_s": ["none", "short", "tall"],
-                        f"{ns}:wall_w": ["none", "short", "tall"],
+                        f"{ns}:wall_n": ["none", "tall"],
+                        f"{ns}:wall_e": ["none", "tall"],
+                        f"{ns}:wall_s": ["none", "tall"],
+                        f"{ns}:wall_w": ["none", "tall"],
                         f"{ns}:wall_post": [True, False],
                     },
                 },
@@ -885,7 +884,7 @@ def write_block_set(
                     ns,
                     {
                         f"tag:{ns}:wall": {},
-                        "minecraft:geometry": f"{geo}.wall_p1_0000_short",
+                        "minecraft:geometry": f"{geo}.wall_p1_0000_tall",
                         "minecraft:collision_box": root_wall,
                         "minecraft:selection_box": selection_from_boxes(root_wall),
                         "minecraft:light_dampening": 0,

@@ -460,12 +460,15 @@ Post `[-2,0,-2][4,24,4]` plus 6×24×4 arms per side (selection clamp Y to 16).
 
 ### 7.1 States (script-driven)
 
+Tall-only sides (no `short`) keep each wall at **32** permutations so large
+material packs stay under Bedrock's **65536** custom-permutation budget.
+
 ```json
 "states": {
-  "{ns}:wall_n": ["none", "short", "tall"],
-  "{ns}:wall_e": ["none", "short", "tall"],
-  "{ns}:wall_s": ["none", "short", "tall"],
-  "{ns}:wall_w": ["none", "short", "tall"],
+  "{ns}:wall_n": ["none", "tall"],
+  "{ns}:wall_e": ["none", "tall"],
+  "{ns}:wall_s": ["none", "tall"],
+  "{ns}:wall_w": ["none", "tall"],
   "{ns}:wall_post": [true, false]
 }
 ```
@@ -481,22 +484,22 @@ Post `[-2,0,-2][4,24,4]` plus 6×24×4 arms per side (selection clamp Y to 16).
 
 For each cardinal neighbour:
 
-- Wall or fence gate → short (tall if solid block above that neighbour)
-- Solid full block → short/tall same way  
-- Slab/stairs/etc. → none  
+- Wall or fence gate → `tall`
+- Solid full block → `tall`
+- Slab/stairs/etc. → `none`
 
 **Post:**
 
 - `true` if no connections, or corner/T, or solid above  
-- `false` only for clean straight short N–S or E–W run with no solid above  
+- `false` only for clean straight connected N–S or E–W run with no solid above  
 
 ### 7.4 Geometry name map — **E↔W mesh swap only**
 
-Files: `wall_p{post}_{N}{E}{S}{W}_{short|tall}`
+Files: `wall_p{post}_{N}{E}{S}{W}_tall` (connected arms always use tall geos)
 
 ```text
-world states: n,e,s,w each none|short|tall
-height = tall if any side tall else short
+world states: n,e,s,w each none|tall
+height = tall
 gn = 1 if n != none else 0
 ge = 1 if w != none else 0   // swapped
 gs = 1 if s != none else 0

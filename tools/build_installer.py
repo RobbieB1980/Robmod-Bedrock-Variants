@@ -91,13 +91,42 @@ def main() -> int:
         final.unlink()
     built.rename(final)
 
-    # Convenience copy to Grok Working
-    home_copy = Path(r"F:\Grok Working") / INSTALLER_FINAL_NAME
+    # Convenience copies (best-effort)
+    for home_copy in (
+        Path(r"F:\Grok Working") / INSTALLER_FINAL_NAME,
+        Path(r"H:\GrokBuild Master Folder\Completed Projects\Bedrock")
+        / INSTALLER_FINAL_NAME,
+    ):
+        try:
+            home_copy.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(final, home_copy)
+            print(f"Copied installer → {home_copy}")
+        except Exception as e:
+            print(f"(Could not copy installer to {home_copy}: {e})")
+
+    # Also refresh the extracted app folder used for day-to-day work
+    app_home = Path(
+        r"H:\GrokBuild Master Folder\Completed Projects\Bedrock\RBVariants"
+    )
     try:
-        shutil.copy2(final, home_copy)
-        print(f"Copied installer → {home_copy}")
+        if app_home.exists():
+            # Preserve any user output folders (e.g. Rob's Block) — replace only tooling
+            for name in ("RB Variant Maker.exe", "README.txt", "kit", "_internal"):
+                src = payload / name
+                dst = app_home / name
+                if not src.exists():
+                    continue
+                if dst.is_dir():
+                    shutil.rmtree(dst)
+                elif dst.is_file():
+                    dst.unlink()
+                if src.is_dir():
+                    shutil.copytree(src, dst)
+                else:
+                    shutil.copy2(src, dst)
+            print(f"Refreshed app tooling → {app_home}")
     except Exception as e:
-        print(f"(Could not copy to F:\\Grok Working: {e})")
+        print(f"(Could not refresh {app_home}: {e})")
 
     size_mb = final.stat().st_size / (1024 * 1024)
     print()

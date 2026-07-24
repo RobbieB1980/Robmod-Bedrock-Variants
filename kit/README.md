@@ -10,6 +10,7 @@ Proven on **Rob Mod Bedrock Edition v1.7.1** (hundreds of materials).
 |------|---------|
 | `geometries/` | 94 BVS-derived `.geo.json` models (stairs L/R, fence 16, wall matrix, slab, gate) |
 | `templates/main.js` | Production script with `__NS__` placeholder (slab raycast, fence/wall/gate) |
+| `simplify_walls.py` | Post-process: drop wall `short` states (162 to 32 perms) for large packs |
 | `examples/config.example.json` | Sample settings |
 | `../tools/apply_variants.py` | CLI mass-applier (ends with **unique UUID** generation) |
 | `../WORKING_VARIANT_REFERENCE.md` | Full technical playbook |
@@ -26,7 +27,7 @@ Proven on **Rob Mod Bedrock Edition v1.7.1** (hundreds of materials).
 | `{ns}:{base}_stairs` | Vanilla corner trait + L↔R mesh swap |
 | `{ns}:{base}_slab` | bottom / top / double + script stacking |
 | `{ns}:{base}_fence` | `conn` 0–15, E↔W mesh swap |
-| `{ns}:{base}_wall` | short/tall per side + post |
+| `{ns}:{base}_wall` | none/tall per side + post (**32** perms; no short — keeps packs under 65536) |
 | `{ns}:{base}_fence_gate` | open / redstone / in-wall |
 
 Plus recipes, loot tables, lang, `blocks.json`, shared geometries, one `scripts/main.js`.
@@ -136,7 +137,7 @@ py -3 tools/apply_variants.py --bp BP --rp RP --ns myns --all --keep-uuids
 ## Smoke test
 
 1. `/give @s yournamespace:yourblock` (+ `_stairs` `_slab` `_fence` `_wall` `_fence_gate`)  
-2. Stairs corners, slab double + side top/bottom aim, fence all axes, wall short/tall, gate open/redstone  
+2. Stairs corners, slab double + side top/bottom aim, fence all axes, wall connections (tall arms only), gate open/redstone  
 
 ## Rebuild geometries from Block Variant Studio (optional)
 

@@ -178,16 +178,21 @@ function isSolidForWall(block) {
   return true;
 }
 
-function sideConnection(neighborBlock, aboveNeighbor) {
+/**
+ * Simplified walls: sides are only none|tall (no short).
+ * Tall-only cuts each wall from 162 to 32 permutations so large
+ * packs stay under Bedrock's 65536 custom-permutation budget.
+ */
+function sideConnection(neighborBlock) {
   if (!neighborBlock || !neighborBlock.isValid) return "none";
   try {
     if (neighborBlock.isAir) return "none";
   } catch (_) {}
   if (isWall(neighborBlock.typeId) || isGate(neighborBlock.typeId)) {
-    return aboveNeighbor && isSolidForWall(aboveNeighbor) ? "tall" : "short";
+    return "tall";
   }
   if (isSolidForWall(neighborBlock)) {
-    return aboveNeighbor && isSolidForWall(aboveNeighbor) ? "tall" : "short";
+    return "tall";
   }
   return "none";
 }
@@ -203,20 +208,21 @@ function recomputeWallModern(block) {
   const wB = dim.getBlock({ x: x - 1, y, z });
   const above = dim.getBlock({ x, y: y + 1, z });
 
-  const wall_n = sideConnection(nB, nB && dim.getBlock({ x: nB.x, y: y + 1, z: nB.z }));
-  const wall_e = sideConnection(eB, eB && dim.getBlock({ x: eB.x, y: y + 1, z: eB.z }));
-  const wall_s = sideConnection(sB, sB && dim.getBlock({ x: sB.x, y: y + 1, z: sB.z }));
-  const wall_w = sideConnection(wB, wB && dim.getBlock({ x: wB.x, y: y + 1, z: wB.z }));
+  const wall_n = sideConnection(nB);
+  const wall_e = sideConnection(eB);
+  const wall_s = sideConnection(sB);
+  const wall_w = sideConnection(wB);
 
   let post = true;
+  const connected = (v) => v !== "none";
   const straightNS =
-    wall_n === "short" &&
-    wall_s === "short" &&
+    connected(wall_n) &&
+    connected(wall_s) &&
     wall_e === "none" &&
     wall_w === "none";
   const straightEW =
-    wall_e === "short" &&
-    wall_w === "short" &&
+    connected(wall_e) &&
+    connected(wall_w) &&
     wall_n === "none" &&
     wall_s === "none";
   const forcePost = above && isSolidForWall(above);
@@ -515,7 +521,7 @@ system.beforeEvents.startup.subscribe((init) => {
   });
 });
 
-/** Normalize Direction enum / string → up|down|north|south|east|west */
+/** Normalize Direction enum / string to up|down|north|south|east|west */
 function normalizeFace(face) {
   if (face === undefined || face === null) return undefined;
   if (FACE_TO_DIR[face]) return FACE_TO_DIR[face];
@@ -802,9 +808,9 @@ function localYFromRayMarch(blockLoc, head, view) {
 
 /**
  * Vanilla slab half rules for the *destination cell*:
- * - Click UP face   → bottom slab in cell above
- * - Click DOWN face → top slab in cell below
- * - Click SIDE      → top if hit Y ≥ 0.5 else bottom (same cell neighbour)
+ * - Click UP face   to bottom slab in cell above
+ * - Click DOWN face to top slab in cell below
+ * - Click SIDE      to top if hit Y ≥ 0.5 else bottom (same cell neighbour)
  */
 function halfForPlacement(faceDir, faceLocation, blockLoc, head, view) {
   if (faceDir === "up") return "bottom";
@@ -952,7 +958,7 @@ world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
       view
     );
 
-    // Click empty half face → stack to double
+    // Click empty half face to stack to double
     // (up on bottom slab, down on top slab)
     if (
       (faceDir === "up" && effective === "bottom") ||
@@ -966,7 +972,7 @@ world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
       return;
     }
 
-    // Side click aiming at the empty half → stack to double in place
+    // Side click aiming at the empty half to stack to double in place
     if (
       faceDir !== "up" &&
       faceDir !== "down" &&
