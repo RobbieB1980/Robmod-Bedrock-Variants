@@ -1,4 +1,4 @@
-# Robmod Bedrock Variants
+# Rob's Bedrock Variants
 
 Portable, **working** reference + mass-apply kit for vanilla-compatible custom block variants on **Minecraft Bedrock 1.26+**.
 
